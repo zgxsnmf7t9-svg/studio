@@ -1,0 +1,1335 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f0f0f">
+<title>Studio — 考前冲刺</title>
+<link rel="manifest" href="data:application/json,{}">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════
+   TOKENS
+═══════════════════════════════════════════ */
+:root {
+  --ink:     #0f0f0f;
+  --ink2:    #3a3a3a;
+  --ink3:    #8a8a8a;
+  --ink4:    #c0c0c0;
+  --paper:   #fafaf8;
+  --card:    #ffffff;
+  --rim:     #ebebeb;
+  --rim2:    #f3f3f1;
+  --sky:     #3d7eaa;
+  --sky-l:   #d4e8f5;
+  --sky-d:   #1e5a80;
+  --glow:    rgba(61,126,170,0.12);
+  --ok:      #3a7d5c;
+  --ok-l:    #d4eddf;
+  --warn:    #c47a2e;
+  --warn-l:  #fdebd5;
+  --r:       18px;
+  --r2:      12px;
+  --r3:      8px;
+  --sh:      0 2px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
+  --sh2:     0 8px 32px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06);
+  --font-s:  'DM Serif Display', Georgia, serif;
+  --font-b:  'DM Sans', system-ui, sans-serif;
+}
+
+/* ═══════════════════════════════════════════
+RESET & BASE
+═══════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html { height: 100%; }
+body {
+font-family: var(–font-b);
+background: var(–paper);
+color: var(–ink);
+min-height: 100%;
+overflow-x: hidden;
+-webkit-font-smoothing: antialiased;
+padding-bottom: calc(72px + env(safe-area-inset-bottom));
+}
+button { font-family: inherit; cursor: pointer; border: none; background: none; }
+textarea, input { font-family: inherit; }
+::-webkit-scrollbar { width: 0; height: 0; }
+
+/* ═══════════════════════════════════════════
+ANIMATIONS
+═══════════════════════════════════════════ */
+@keyframes fadeUp   { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+@keyframes pop      { 0%,100%{transform:scale(1)} 50%{transform:scale(1.18)} }
+@keyframes ripple   { from{opacity:.4;transform:scale(0)} to{opacity:0;transform:scale(2.5)} }
+@keyframes confetti { 0%{transform:translateY(0) rotate(0deg);opacity:1} 100%{transform:translateY(80px) rotate(720deg);opacity:0} }
+@keyframes slideIn  { from{transform:translateX(100%)} to{transform:none} }
+@keyframes slideOut { from{transform:none} to{transform:translateX(100%)} }
+@keyframes pulse    { 0%,100%{opacity:.6} 50%{opacity:1} }
+@keyframes spin     { to{transform:rotate(360deg)} }
+
+.fade-up { animation: fadeUp .35s cubic-bezier(.22,.68,0,1.2) both; }
+.fade-up:nth-child(1){animation-delay:.04s}
+.fade-up:nth-child(2){animation-delay:.08s}
+.fade-up:nth-child(3){animation-delay:.12s}
+.fade-up:nth-child(4){animation-delay:.16s}
+.fade-up:nth-child(5){animation-delay:.20s}
+.fade-up:nth-child(6){animation-delay:.24s}
+.fade-up:nth-child(7){animation-delay:.28s}
+.fade-up:nth-child(8){animation-delay:.32s}
+
+/* ═══════════════════════════════════════════
+LAYOUT SHELL
+═══════════════════════════════════════════ */
+.shell { max-width: 480px; margin: 0 auto; position: relative; min-height: 100vh; }
+
+/* ═══════════════════════════════════════════
+TOP BAR
+═══════════════════════════════════════════ */
+.topbar {
+position: sticky; top: 0; z-index: 200;
+background: rgba(250,250,248,0.88);
+backdrop-filter: blur(20px) saturate(1.5);
+-webkit-backdrop-filter: blur(20px) saturate(1.5);
+border-bottom: 1px solid var(–rim);
+padding: 14px 20px 0;
+}
+.topbar-row {
+display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;
+}
+.brand { font-family: var(–font-s); font-size: 22px; letter-spacing: -.02em; color: var(–ink); }
+.brand em { font-style: italic; color: var(–sky); }
+.pts-pill {
+display: flex; align-items: center; gap: 6px;
+background: var(–ink); color: #fff;
+padding: 6px 14px; border-radius: 99px;
+font-size: 13px; font-weight: 600;
+transition: transform .3s cubic-bezier(.34,1.56,.64,1);
+cursor: default;
+}
+.pts-pill.pop { animation: pop .4s ease; }
+.pts-pill .streak { font-size: 11px; opacity: .65; border-left: 1px solid rgba(255,255,255,.2); padding-left: 8px; margin-left: 2px; }
+
+/* bottom nav tabs */
+.nav-tabs { display: flex; gap: 0; border-bottom: 1px solid var(–rim); }
+.nav-tab {
+flex: 1; padding: 9px 2px; font-size: 11px; font-weight: 500; color: var(–ink3);
+text-align: center; cursor: pointer; border-bottom: 2px solid transparent;
+margin-bottom: -1px; transition: color .2s, border-color .2s; letter-spacing: .03em;
+}
+.nav-tab.on { color: var(–ink); border-bottom-color: var(–ink); }
+
+/* ═══════════════════════════════════════════
+PANELS
+═══════════════════════════════════════════ */
+.panel { display: none; padding: 20px; }
+.panel.on { display: block; }
+
+/* ═══════════════════════════════════════════
+DEADLINE HERO
+═══════════════════════════════════════════ */
+.deadline-hero {
+background: var(–ink);
+border-radius: var(–r);
+padding: 18px 20px;
+margin-bottom: 16px;
+position: relative;
+overflow: hidden;
+color: #fff;
+}
+.deadline-hero::before {
+content: ‘’;
+position: absolute; inset: 0;
+background: radial-gradient(ellipse at 80% 50%, rgba(61,126,170,.35) 0%, transparent 65%);
+pointer-events: none;
+}
+.dl-top { display: flex; justify-content: space-between; align-items: flex-start; }
+.dl-label { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; opacity: .5; margin-bottom: 4px; }
+.dl-school { font-family: var(–font-s); font-size: 18px; letter-spacing: -.01em; }
+.dl-days { text-align: right; }
+.dl-num { font-family: var(–font-s); font-size: 44px; line-height: 1; color: var(–sky-l); }
+.dl-unit { font-size: 10px; opacity: .5; letter-spacing: .08em; text-transform: uppercase; }
+.dl-bar-bg { background: rgba(255,255,255,.12); border-radius: 99px; height: 4px; margin-top: 14px; overflow: hidden; }
+.dl-bar-fill { height: 100%; background: linear-gradient(90deg, var(–sky-l), var(–sky)); border-radius: 99px; transition: width 1.2s ease; }
+.dl-sub { display: flex; justify-content: space-between; margin-top: 5px; font-size: 10px; opacity: .45; }
+
+/* ═══════════════════════════════════════════
+QUOTE CARD
+═══════════════════════════════════════════ */
+.quote-card {
+background: var(–sky-l);
+border-radius: var(–r);
+padding: 14px 16px;
+margin-bottom: 16px;
+display: flex; gap: 10px; align-items: flex-start;
+border: 1px solid rgba(61,126,170,.15);
+}
+.q-mark { font-family: var(–font-s); font-size: 36px; color: var(–sky); line-height: .9; flex-shrink: 0; margin-top: -2px; }
+.q-text { font-size: 13px; line-height: 1.65; color: var(–sky-d); font-style: italic; }
+.q-author { font-size: 10px; color: var(–sky); margin-top: 5px; letter-spacing: .04em; font-style: normal; }
+
+/* ═══════════════════════════════════════════
+MOOD
+═══════════════════════════════════════════ */
+.mood-card {
+background: var(–card); border: 1px solid var(–rim);
+border-radius: var(–r); padding: 14px 16px; margin-bottom: 16px; box-shadow: var(–sh);
+}
+.card-label { font-size: 10px; color: var(–ink3); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 10px; }
+.mood-row { display: flex; gap: 8px; }
+.mood-btn {
+flex: 1; border-radius: var(–r3); border: 1.5px solid var(–rim);
+background: var(–rim2); padding: 8px 4px; text-align: center;
+cursor: pointer; transition: all .18s; font-size: 22px; display: block;
+}
+.mood-btn .ml { font-size: 9px; color: var(–ink3); display: block; margin-top: 2px; }
+.mood-btn:hover { border-color: var(–sky); transform: scale(1.06); }
+.mood-btn.on { background: var(–sky-l); border-color: var(–sky); }
+
+/* ═══════════════════════════════════════════
+DAY STRIP
+═══════════════════════════════════════════ */
+.day-strip { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 16px; }
+.day-pill {
+flex-shrink: 0; min-width: 52px; background: var(–card);
+border: 1.5px solid var(–rim); border-radius: var(–r2);
+padding: 7px 8px; text-align: center; cursor: pointer; transition: all .18s;
+}
+.day-pill:hover { border-color: var(–sky); }
+.day-pill.on { background: var(–ink); border-color: var(–ink); color: #fff; }
+.day-pill.today:not(.on) { border-color: var(–sky); }
+.dp-name { font-size: 10px; font-weight: 600; display: block; letter-spacing: .04em; }
+.dp-date { font-size: 9px; opacity: .55; display: block; margin-top: 1px; }
+.dp-pts  { font-size: 9px; display: block; margin-top: 3px; color: var(–sky); }
+.day-pill.on .dp-pts { color: rgba(255,255,255,.6); }
+
+/* ═══════════════════════════════════════════
+SECTION HEADER
+═══════════════════════════════════════════ */
+.sh {
+font-size: 10px; color: var(–ink3); letter-spacing: .12em; text-transform: uppercase;
+font-weight: 500; margin: 20px 0 10px;
+display: flex; align-items: center; gap: 8px;
+}
+.sh::after { content: ‘’; flex: 1; height: 1px; background: var(–rim); }
+
+/* ═══════════════════════════════════════════
+TASK CARD
+═══════════════════════════════════════════ */
+.task-card {
+background: var(–card); border: 1.5px solid var(–rim);
+border-radius: var(–r); padding: 14px 16px; margin-bottom: 8px;
+box-shadow: var(–sh); transition: border-color .2s, background .2s;
+position: relative; overflow: hidden;
+}
+.task-card.done { background: var(–ok-l); border-color: #b2d8c4; }
+.task-card.wb { border-left: 3px solid var(–sky); }
+.task-card.wb.done { border-left-color: var(–ok); }
+
+.task-row { display: flex; align-items: center; gap: 12px; }
+.chk {
+width: 26px; height: 26px; border-radius: 50%;
+border: 1.5px solid var(–rim2);
+display: flex; align-items: center; justify-content: center;
+cursor: pointer; transition: all .2s; flex-shrink: 0;
+font-size: 13px; color: transparent;
+position: relative; overflow: hidden;
+}
+.chk::after {
+content: ‘’; position: absolute; inset: 0; background: var(–sky);
+border-radius: 50%; transform: scale(0); opacity: 0; transition: all .3s;
+}
+.task-card.done .chk { background: var(–ok); border-color: var(–ok); color: #fff; }
+
+.ti { flex: 1; min-width: 0; }
+.tn { font-size: 14px; font-weight: 500; transition: opacity .2s; }
+.task-card.done .tn { opacity: .4; text-decoration: line-through; }
+.tm { font-size: 11px; color: var(–ink3); margin-top: 1px; }
+
+.pts-badge {
+font-size: 11px; font-weight: 600; padding: 3px 9px;
+border-radius: 99px; background: var(–rim2); color: var(–ink3);
+white-space: nowrap; flex-shrink: 0; transition: all .2s;
+}
+.task-card.done .pts-badge { background: var(–ok-l); color: var(–ok); }
+
+/* extra stepper */
+.extra {
+margin-top: 10px; padding-top: 10px; border-top: 1px solid var(–rim);
+display: flex; align-items: center; gap: 8px;
+}
+.extra-label { font-size: 11px; color: var(–ink3); flex: 1; line-height: 1.4; }
+.stepper { display: flex; align-items: center; gap: 6px; }
+.stp {
+width: 26px; height: 26px; border-radius: var(–r3);
+border: 1.5px solid var(–rim2); background: var(–rim2);
+font-size: 16px; display: flex; align-items: center; justify-content: center;
+cursor: pointer; transition: all .15s; color: var(–ink2);
+}
+.stp:hover { border-color: var(–sky); color: var(–sky); }
+.sv { font-size: 13px; font-weight: 600; min-width: 18px; text-align: center; }
+.extra-pts { font-size: 11px; color: var(–sky); font-weight: 600; min-width: 38px; text-align: right; }
+
+/* note */
+.note-row { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(–rim); }
+.note-inp {
+width: 100%; border: none; background: var(–rim2); border-radius: var(–r3);
+padding: 7px 10px; font-size: 12px; color: var(–ink); resize: none; outline: none;
+transition: background .2s; line-height: 1.5;
+}
+.note-inp:focus { background: #efefed; }
+.note-inp::placeholder { color: var(–ink4); }
+
+/* ═══════════════════════════════════════════
+WATER TRACKER
+═══════════════════════════════════════════ */
+.water-card {
+background: var(–card); border: 1.5px solid var(–rim);
+border-radius: var(–r); padding: 14px 16px; margin-bottom: 8px; box-shadow: var(–sh);
+}
+.wt-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.wt-lbl { font-size: 13px; font-weight: 500; }
+.wt-cnt { font-size: 12px; color: var(–sky); font-weight: 600; }
+.glasses { display: flex; gap: 7px; flex-wrap: wrap; }
+.glass {
+width: 30px; height: 30px; border-radius: var(–r3);
+border: 1.5px solid var(–sky-l); background: var(–rim2);
+cursor: pointer; display: flex; align-items: center; justify-content: center;
+font-size: 14px; transition: all .18s;
+}
+.glass.on { background: var(–sky-l); border-color: var(–sky); }
+.glass:hover { transform: scale(1.1); }
+
+/* ═══════════════════════════════════════════
+PAINTING CARD
+═══════════════════════════════════════════ */
+.paint-card {
+background: var(–card); border: 1.5px solid var(–rim);
+border-radius: var(–r); padding: 16px; margin-bottom: 8px; box-shadow: var(–sh);
+}
+.paint-top { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.paint-icon { font-size: 26px; }
+.paint-info { flex: 1; }
+.paint-name { font-size: 14px; font-weight: 500; }
+.paint-desc { font-size: 11px; color: var(–ink3); margin-top: 1px; }
+.paint-pts { font-size: 14px; font-weight: 600; color: var(–sky); }
+.prog-bg { background: var(–rim2); border-radius: 99px; height: 5px; overflow: hidden; }
+.prog-fill { height: 100%; background: linear-gradient(90deg, var(–sky-l), var(–sky)); border-radius: 99px; transition: width .5s ease; }
+.prog-labels { display: flex; justify-content: space-between; margin-top: 4px; font-size: 10px; color: var(–ink3); }
+.paint-steps { display: flex; gap: 7px; margin-top: 12px; flex-wrap: wrap; }
+.pstep {
+background: var(–rim2); border: 1.5px solid var(–rim);
+border-radius: 99px; padding: 5px 12px; font-size: 11px;
+cursor: pointer; transition: all .2s; color: var(–ink2);
+}
+.pstep:hover { border-color: var(–sky); }
+.pstep.on { background: var(–sky-l); border-color: var(–sky); color: var(–sky-d); }
+
+/* ═══════════════════════════════════════════
+WEEK / MONTH SUMMARY
+═══════════════════════════════════════════ */
+.sum-card {
+background: var(–card); border: 1.5px solid var(–rim);
+border-radius: var(–r); padding: 18px; margin-bottom: 12px; box-shadow: var(–sh);
+}
+.sum-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; }
+.sum-title { font-family: var(–font-s); font-size: 19px; letter-spacing: -.01em; }
+.sum-pts { font-size: 22px; font-weight: 700; color: var(–sky-d); font-family: var(–font-s); }
+
+.day-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.dr-day { font-size: 11px; color: var(–ink2); width: 26px; flex-shrink: 0; font-weight: 500; }
+.dr-date { font-size: 10px; color: var(–ink3); width: 30px; flex-shrink: 0; }
+.dr-bar-bg { flex: 1; background: var(–rim2); border-radius: 99px; height: 8px; overflow: hidden; }
+.dr-bar-fill { height: 100%; background: var(–sky-l); border-radius: 99px; transition: width .6s ease; }
+.dr-bar-fill.full { background: var(–sky); }
+.dr-score { font-size: 11px; color: var(–ink2); width: 36px; text-align: right; flex-shrink: 0; }
+
+.ref-wrap { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(–rim); }
+.ref-label { font-size: 11px; color: var(–ink3); margin-bottom: 7px; }
+.ref-inp {
+width: 100%; border: 1.5px solid var(–rim); border-radius: var(–r2);
+background: var(–rim2); padding: 10px 12px; font-size: 13px; color: var(–ink);
+resize: none; outline: none; height: 90px; transition: border-color .2s; line-height: 1.6;
+}
+.ref-inp:focus { border-color: var(–sky); background: #fff; }
+.ref-inp::placeholder { color: var(–ink4); font-style: italic; }
+.save-btn {
+margin-top: 8px; background: var(–ink); color: #fff; border-radius: var(–r3);
+padding: 8px 18px; font-size: 12px; font-weight: 500; cursor: pointer;
+transition: opacity .2s;
+}
+.save-btn:hover { opacity: .8; }
+.saved-badge {
+display: inline-flex; align-items: center; gap: 4px;
+font-size: 11px; color: var(–ok); margin-left: 10px; opacity: 0;
+transition: opacity .3s;
+}
+.saved-badge.show { opacity: 1; }
+
+/* ═══════════════════════════════════════════
+MONTH CALENDAR
+═══════════════════════════════════════════ */
+.cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 4px; margin: 12px 0 8px; }
+.cal-hd { font-size: 9px; color: var(–ink3); text-align: center; padding: 2px; letter-spacing: .04em; }
+.cal-cell {
+aspect-ratio: 1; border-radius: 6px; background: var(–rim2);
+display: flex; align-items: center; justify-content: center;
+font-size: 10px; color: var(–ink3); position: relative; transition: all .15s;
+}
+.cal-cell.active-day { background: var(–sky-l); color: var(–sky-d); font-weight: 500; }
+.cal-cell.full-day { background: var(–sky); color: #fff; font-weight: 600; }
+.cal-cell.today { outline: 2px solid var(–ink); outline-offset: 1px; border-radius: 6px; }
+.cal-cell.future { opacity: .22; }
+.cal-cell.empty { background: transparent; }
+.month-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-top: 12px; }
+.ms { background: var(–rim2); border-radius: var(–r2); padding: 12px; text-align: center; }
+.ms-val { font-family: var(–font-s); font-size: 26px; color: var(–ink); }
+.ms-lbl { font-size: 10px; color: var(–ink3); margin-top: 2px; }
+
+/* ═══════════════════════════════════════════
+SHOP
+═══════════════════════════════════════════ */
+.shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.shop-card {
+background: var(–card); border: 1.5px solid var(–rim);
+border-radius: var(–r); padding: 16px 12px 14px;
+text-align: center; cursor: pointer; box-shadow: var(–sh);
+transition: all .2s; position: relative; overflow: hidden;
+}
+.shop-card:hover:not(.locked):not(.bought) { border-color: var(–sky); transform: translateY(-2px); box-shadow: var(–sh2); }
+.shop-card.locked { opacity: .38; cursor: not-allowed; }
+.shop-card.bought { background: var(–ok-l); border-color: #b2d8c4; }
+.shop-emoji { font-size: 32px; display: block; margin-bottom: 7px; }
+.shop-name { font-size: 13px; font-weight: 500; }
+.shop-sub { font-size: 11px; color: var(–ink3); margin-top: 2px; }
+.shop-cost { font-size: 12px; font-weight: 700; color: var(–ink3); margin-top: 6px; }
+.shop-card.bought .shop-cost { color: var(–ok); }
+.sp-bar-bg { background: var(–rim2); border-radius: 99px; height: 3px; margin: 6px 0 3px; overflow: hidden; }
+.sp-bar-fill { height: 100%; background: linear-gradient(90deg, var(–sky-l), var(–sky)); border-radius: 99px; }
+
+/* custom reward btn */
+.add-reward-btn {
+display: flex; align-items: center; justify-content: center; gap: 8px;
+background: var(–card); border: 1.5px dashed var(–rim2);
+border-radius: var(–r); padding: 16px;
+font-size: 13px; color: var(–ink3); cursor: pointer;
+transition: all .2s; margin-bottom: 14px; width: 100%;
+}
+.add-reward-btn:hover { border-color: var(–sky); color: var(–sky); }
+
+/* ═══════════════════════════════════════════
+LOG
+═══════════════════════════════════════════ */
+.log-item {
+padding: 10px 0; border-bottom: 1px solid var(–rim);
+display: flex; align-items: center; gap: 10px;
+}
+.log-time { font-size: 10px; color: var(–ink3); white-space: nowrap; }
+.log-text { font-size: 12px; color: var(–ink2); flex: 1; }
+.log-pts { font-size: 12px; font-weight: 700; white-space: nowrap; }
+.log-pts.pos { color: var(–sky-d); }
+.log-pts.neg { color: #b0443a; }
+
+/* ═══════════════════════════════════════════
+TOAST
+═══════════════════════════════════════════ */
+.toast {
+position: fixed; bottom: 90px; left: 50%;
+transform: translateX(-50%) translateY(14px);
+background: var(–ink); color: #fff; border-radius: 99px;
+padding: 10px 22px; font-size: 13px; font-weight: 500;
+opacity: 0; z-index: 999; white-space: nowrap; pointer-events: none;
+box-shadow: 0 6px 24px rgba(0,0,0,.2);
+transition: all .32s cubic-bezier(.34,1.56,.64,1);
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ═══════════════════════════════════════════
+CONFETTI
+═══════════════════════════════════════════ */
+.cf { position: fixed; pointer-events: none; animation: confetti .9s ease forwards; z-index: 9999; border-radius: 50%; }
+
+/* ═══════════════════════════════════════════
+MODAL / SHEET
+═══════════════════════════════════════════ */
+.overlay {
+position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 500;
+display: none; align-items: flex-end; justify-content: center;
+backdrop-filter: blur(4px);
+}
+.overlay.show { display: flex; }
+.sheet {
+background: var(–paper); border-radius: 24px 24px 0 0;
+width: 100%; max-width: 480px; padding: 0 20px 32px;
+max-height: 90vh; overflow-y: auto;
+animation: fadeUp .3s ease;
+}
+.sheet-handle {
+width: 36px; height: 4px; background: var(–rim2); border-radius: 99px;
+margin: 12px auto 20px;
+}
+.sheet-title { font-family: var(–font-s); font-size: 20px; margin-bottom: 18px; }
+.field { margin-bottom: 14px; }
+.field label { font-size: 11px; color: var(–ink3); letter-spacing: .08em; text-transform: uppercase; display: block; margin-bottom: 6px; }
+.field input, .field select {
+width: 100%; border: 1.5px solid var(–rim); border-radius: var(–r2);
+background: var(–card); padding: 11px 12px; font-size: 14px; color: var(–ink);
+outline: none; transition: border-color .2s; appearance: none;
+}
+.field input:focus, .field select:focus { border-color: var(–sky); }
+.emoji-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 6px; margin-top: 4px; }
+.eg-btn {
+aspect-ratio: 1; border-radius: var(–r3); border: 1.5px solid var(–rim);
+background: var(–rim2); font-size: 20px; cursor: pointer; transition: all .15s;
+display: flex; align-items: center; justify-content: center;
+}
+.eg-btn:hover, .eg-btn.on { border-color: var(–sky); background: var(–sky-l); }
+.sheet-btn {
+width: 100%; background: var(–ink); color: #fff; border-radius: var(–r2);
+padding: 14px; font-size: 15px; font-weight: 600; cursor: pointer;
+transition: opacity .2s; margin-top: 6px;
+}
+.sheet-btn:hover { opacity: .85; }
+.sheet-btn.danger { background: #b0443a; }
+.sheet-btn.ghost { background: none; color: var(–ink3); border: 1.5px solid var(–rim); margin-top: 8px; }
+
+/* ═══════════════════════════════════════════
+STATS / INFO CARDS
+═══════════════════════════════════════════ */
+.info-box {
+background: var(–rim2); border-radius: var(–r2); padding: 14px 16px;
+font-size: 12px; color: var(–ink3); line-height: 1.8; margin-top: 14px;
+}
+.info-box strong { color: var(–ink); }
+
+/* ═══════════════════════════════════════════
+BOTTOM NAV BAR
+═══════════════════════════════════════════ */
+.bottom-nav {
+position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+width: 100%; max-width: 480px; z-index: 300;
+background: rgba(250,250,248,.92);
+backdrop-filter: blur(20px);
+-webkit-backdrop-filter: blur(20px);
+border-top: 1px solid var(–rim);
+display: flex;
+padding-bottom: env(safe-area-inset-bottom);
+}
+.bn-tab {
+flex: 1; display: flex; flex-direction: column; align-items: center;
+justify-content: center; padding: 10px 4px; cursor: pointer;
+transition: color .2s; color: var(–ink3); font-size: 10px; font-weight: 500; gap: 3px;
+}
+.bn-tab svg { width: 22px; height: 22px; stroke-width: 1.7; transition: stroke .2s; stroke: var(–ink3); fill: none; }
+.bn-tab.on { color: var(–ink); }
+.bn-tab.on svg { stroke: var(–ink); }
+
+.pill-badge {
+display: inline-block; background: var(–sky); color: #fff;
+border-radius: 99px; font-size: 9px; font-weight: 700;
+padding: 1px 6px; margin-left: 4px; vertical-align: middle;
+}
+</style>
+
+</head>
+<body>
+<div class="shell">
+
+<!-- TOP BAR (hidden on mobile, using bottom nav) -->
+
+<div class="topbar" id="topbar">
+  <div class="topbar-row">
+    <div class="brand">Studio<em>.</em></div>
+    <div class="pts-pill" id="ptsPill">
+      <span>⭐</span> <span id="ptsNum">0</span>
+      <span class="streak" id="streakTxt">🔥0天</span>
+    </div>
+  </div>
+  <div class="nav-tabs" id="navTabs">
+    <div class="nav-tab on" data-tab="today">今天</div>
+    <div class="nav-tab" data-tab="week">本周</div>
+    <div class="nav-tab" data-tab="month">月度</div>
+    <div class="nav-tab" data-tab="shop">商店</div>
+    <div class="nav-tab" data-tab="log">记录</div>
+  </div>
+</div>
+
+<!-- PANELS -->
+
+<div id="panel-today" class="panel on"></div>
+<div id="panel-week"  class="panel"></div>
+<div id="panel-month" class="panel"></div>
+<div id="panel-shop"  class="panel"></div>
+<div id="panel-log"   class="panel"></div>
+
+<!-- BOTTOM NAV -->
+
+<nav class="bottom-nav">
+  <div class="bn-tab on" data-tab="today">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.93 4.93l2.12 2.12M16.95 16.95l2.12 2.12M4.93 19.07l2.12-2.12M16.95 7.05l2.12-2.12"/></svg>
+    今天
+  </div>
+  <div class="bn-tab" data-tab="week">
+    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+    本周
+  </div>
+  <div class="bn-tab" data-tab="month">
+    <svg viewBox="0 0 24 24"><path d="M3 3h18v18H3zM3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+    月度
+  </div>
+  <div class="bn-tab" data-tab="shop">
+    <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0"/></svg>
+    商店
+  </div>
+  <div class="bn-tab" data-tab="log">
+    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+    记录
+  </div>
+</nav>
+
+</div><!-- .shell -->
+
+<!-- TOAST -->
+
+<div class="toast" id="toast"></div>
+
+<!-- MODAL: Add Reward -->
+
+<div class="overlay" id="rewardOverlay" onclick="closeRewardModal(event)">
+  <div class="sheet" id="rewardSheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">添加自定义奖励</div>
+    <div class="field">
+      <label>选择图标</label>
+      <div class="emoji-grid" id="emojiGrid"></div>
+    </div>
+    <div class="field">
+      <label>奖励名称</label>
+      <input type="text" id="rName" placeholder="例如：买一套画具" maxlength="20">
+    </div>
+    <div class="field">
+      <label>所需积分</label>
+      <input type="number" id="rCost" placeholder="例如：150" min="1" max="9999">
+    </div>
+    <button class="sheet-btn" onclick="submitReward()">添加奖励</button>
+    <button class="sheet-btn ghost" onclick="closeRewardModal()">取消</button>
+  </div>
+</div>
+
+<!-- MODAL: Add Custom Task -->
+
+<div class="overlay" id="taskOverlay" onclick="closeTaskModal(event)">
+  <div class="sheet" id="taskSheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">添加自定义任务</div>
+    <div class="field">
+      <label>任务名称</label>
+      <input type="text" id="tName" placeholder="例如：练习速写30分钟" maxlength="30">
+    </div>
+    <div class="field">
+      <label>基础积分</label>
+      <input type="number" id="tPts" placeholder="例如：8" min="1" max="99">
+    </div>
+    <div class="field">
+      <label>类别</label>
+      <select id="tCat">
+        <option value="french">🇫🇷 法语</option>
+        <option value="art">🎨 创作</option>
+        <option value="wellbeing">🌿 身心</option>
+      </select>
+    </div>
+    <button class="sheet-btn" onclick="submitTask()">添加任务</button>
+    <button class="sheet-btn ghost" onclick="closeTaskModal()">取消</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+/* ═══════════════════════════
+   CONSTANTS
+═══════════════════════════ */
+const DEADLINE = new Date('2025-07-01');
+const START    = new Date('2025-05-04');
+const DAYS_ZH  = ['周一','周二','周三','周四','周五','周六','周日'];
+const EMOJIS   = ['🎁','🎬','🍜','🧋','🍫','🛍','✏️','🎨','📚','💅','🌸','🍕','🎮','🛋','🌿','☕','🍰','🎵'];
+
+const DEFAULT_FRENCH = [
+  { id:'sleep',   name:'🌙 11点前入睡',    meta:'早睡早起，明天更有状态',      pts:10, extra:null },
+  { id:'vocab',   name:'📚 背法语单词',     meta:'至少20个',                   pts:8,  extra:{label:'每多背10个',per:3,max:3} },
+  { id:'grammar', name:'📖 学语法知识点',   meta:'至少1个知识点',              pts:8,  extra:{label:'每多学1个',per:4,max:2} },
+  { id:'reading', name:'📕 读法语原版书',   meta:'至少20分钟',                 pts:7,  extra:{label:'每多读10分钟',per:2,max:3} },
+  { id:'video',   name:'🎥 法语输出练习',   meta:'录制一段自言自语或朗读视频',  pts:10, extra:null },
+];
+
+const DEFAULT_ART = [
+  { id:'sketch',  name:'✏️ 今日速写',       meta:'每天画，手感不会丢',         pts:8,  extra:null },
+  { id:'painting',name:'🎨 本周完整画作',   meta:'完成一幅完整作品得35分',     pts:35, weekly:true, steps:['起稿','线稿','上色','收尾'] },
+  { id:'reference',name:'🖼 研究参考作品',  meta:'看博物馆/美术书/作品集',     pts:5,  extra:null },
+  { id:'portfolio',name:'📁 更新作品集',    meta:'整理或添加一件作品',         pts:6,  extra:null },
+];
+
+const DEFAULT_WELLBEING = [
+  { id:'exercise', name:'🏃 运动健身',       meta:'至少20分钟，任何方式都好',   pts:8,  extra:null },
+  { id:'movie',    name:'🎬 看电影或剧集',   meta:'放松一下，可以选法语片！',   pts:5,  extra:null },
+  { id:'walk',     name:'🌳 出门散散步',     meta:'新鲜空气清醒脑袋',           pts:4,  extra:null },
+  { id:'journal',  name:'📔 写日记',         meta:'记录进度和心情',             pts:5,  extra:null },
+  { id:'noscreen', name:'📵 睡前不刷手机',   meta:'睡前1小时放下手机',          pts:6,  extra:null },
+];
+
+const DEFAULT_REWARDS = [
+  { id:'snack',    name:'一包零食',        emoji:'🍿', cost:60  },
+  { id:'tea',      name:'一杯奶茶',        emoji:'🧋', cost:100 },
+  { id:'lazy',     name:'摆烂半天',        emoji:'🛋', cost:80  },
+  { id:'delivery', name:'外卖自由',        emoji:'🍜', cost:120 },
+  { id:'book',     name:'买一本书',        emoji:'📚', cost:150 },
+  { id:'cinema',   name:'去看电影',        emoji:'🎬', cost:180 },
+  { id:'art',      name:'买画具/耗材',     emoji:'🎨', cost:200 },
+  { id:'clothes',  name:'买一件喜欢的',    emoji:'🛍', cost:300 },
+];
+
+const QUOTES = [
+  { t:'L\'art, c\'est moi; la science, c\'est nous.', a:'— Claude Bernard' },
+  { t:'每一笔都算数，每一个单词都算数。', a:'— 今天的你' },
+  { t:'Petit à petit, l\'oiseau fait son nid.', a:'— 法语谚语：一点一点，鸟儿筑好了巢' },
+  { t:'进步从来不是直线，但方向永远向前。', a:'— 给坚持画画的你' },
+  { t:'La créativité, c\'est l\'intelligence qui s\'amuse.', a:'— Einstein（创造力是玩耍中的智慧）' },
+  { t:'你画的每一幅画，都在告诉心仪院校：我来了。', a:'— Studio' },
+  { t:'Un chef-d\'œuvre commence toujours par un premier trait.', a:'— 每件杰作都始于第一笔' },
+];
+
+/* ═══════════════════════════
+   STATE
+═══════════════════════════ */
+function loadState() {
+  try {
+    const s = JSON.parse(localStorage.getItem('studio_v1'));
+    if (!s) return fresh();
+    // migrate: ensure all days exist
+    if (!s.days || s.days.length < 7) s.days = Array(7).fill(null).map((_,i) => s.days?.[i] || freshDay());
+    if (!s.monthData) s.monthData = {};
+    if (!s.customTasks) s.customTasks = [];
+    if (!s.customRewards) s.customRewards = [];
+    if (!s.weekReflections) s.weekReflections = {};
+    if (!s.monthReflections) s.monthReflections = {};
+    return s;
+  } catch(e) { return fresh(); }
+}
+
+function fresh() {
+  return {
+    points: 0, streak: 0, lastDate: null, weekEarned: 0,
+    days: Array(7).fill(null).map(() => freshDay()),
+    paintSteps: Array(4).fill(false), paintDone: false,
+    shopBought: {},
+    log: [],
+    customTasks: [],
+    customRewards: [],
+    weekReflections: {},   // key: "YYYY-Www" → text
+    monthReflections: {},  // key: "YYYY-MM" → text
+    monthData: {},         // key: "YYYY-MM-DD" → {earned, completed, total}
+    water: {},             // key: "YYYY-MM-DD" → count
+    mood: {},              // key: "YYYY-MM-DD" → 0-4
+  };
+}
+
+function freshDay() { return { tasks: {} }; }
+
+let S = loadState();
+let activeDay = todayIdx();
+let activeTab = 'today';
+let selectedEmoji = '🎁';
+
+function persist() { localStorage.setItem('studio_v1', JSON.stringify(S)); }
+
+/* ═══════════════════════════
+   UTILS
+═══════════════════════════ */
+function todayIdx() { return (new Date().getDay() + 6) % 7; }
+function getMonday(offset=0) {
+  const d = new Date(); const day = d.getDay(); const diff = (day===0?-6:1-day);
+  d.setDate(d.getDate() + diff + offset*7); d.setHours(0,0,0,0); return d;
+}
+function dateForDay(i) { const m = getMonday(); m.setDate(m.getDate()+i); return m; }
+function fmt(d) { return `${d.getMonth()+1}/${d.getDate()}`; }
+function fmtFull(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function weekKey() { const m = getMonday(); return fmtFull(m); }
+function monthKey() { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`; }
+
+function allTasks(cat) {
+  const defaults = cat==='french' ? DEFAULT_FRENCH : cat==='art' ? DEFAULT_ART.filter(t=>!t.weekly) : DEFAULT_WELLBEING;
+  const custom = S.customTasks.filter(t=>t.cat===cat);
+  return [...defaults, ...custom];
+}
+
+function dayEarned(i) {
+  let e = 0;
+  const d = S.days[i];
+  [...DEFAULT_FRENCH, ...DEFAULT_ART.filter(t=>!t.weekly), ...DEFAULT_WELLBEING, ...S.customTasks].forEach(t => {
+    const td = d.tasks[t.id];
+    if (td?.done) { e += t.pts; if (t.extra && td.extra) e += td.extra * t.extra.per; }
+  });
+  if (S.paintDone) e += 35;
+  return e;
+}
+
+/* ═══════════════════════════
+   ROUTING
+═══════════════════════════ */
+function switchTab(t) {
+  activeTab = t;
+  document.querySelectorAll('.nav-tab').forEach(el => el.classList.toggle('on', el.dataset.tab===t));
+  document.querySelectorAll('.bn-tab').forEach(el => el.classList.toggle('on', el.dataset.tab===t));
+  document.querySelectorAll('.panel').forEach(el => el.classList.remove('on'));
+  document.getElementById('panel-'+t).classList.add('on');
+  if (t==='today')  renderToday();
+  if (t==='week')   renderWeek();
+  if (t==='month')  renderMonth();
+  if (t==='shop')   renderShop();
+  if (t==='log')    renderLog();
+}
+
+/* ═══════════════════════════
+   TODAY PANEL
+═══════════════════════════ */
+function renderToday() {
+  const p = document.getElementById('panel-today');
+  p.innerHTML = '';
+
+  // deadline hero
+  p.appendChild(buildDeadline());
+  // quote
+  p.appendChild(buildQuote());
+  // mood
+  p.appendChild(buildMood());
+  // day strip
+  p.appendChild(buildDayStrip());
+  // sections
+  p.appendChild(buildSection('🇫🇷 法语练习', 'french'));
+  p.appendChild(buildSection('🎨 艺术创作', 'art'));
+  p.appendChild(buildSection('🌿 身心状态', 'wellbeing'));
+  // water
+  p.appendChild(buildWater());
+  // painting weekly
+  p.appendChild(buildPainting());
+
+  // add task btn
+  const addBtn = el('button', 'add-reward-btn');
+  addBtn.innerHTML = '<span style="font-size:18px">＋</span> 添加自定义任务';
+  addBtn.onclick = openTaskModal;
+  p.appendChild(addBtn);
+
+  animateIn(p);
+}
+
+function buildDeadline() {
+  const now = new Date(); now.setHours(0,0,0,0);
+  const diff = Math.ceil((DEADLINE - now) / 86400000);
+  const total = (DEADLINE - START) / 86400000;
+  const elapsed = (now - START) / 86400000;
+  const pct = Math.min(100, Math.max(0, elapsed/total*100)).toFixed(1);
+
+  const d = el('div','deadline-hero fade-up');
+  d.innerHTML = `
+    <div class="dl-top">
+      <div>
+        <div class="dl-label">目标截止</div>
+        <div class="dl-school">心仪美术学院</div>
+      </div>
+      <div class="dl-days">
+        <div class="dl-num">${Math.max(0,diff)}</div>
+        <div class="dl-unit">天后</div>
+      </div>
+    </div>
+    <div class="dl-bar-bg"><div class="dl-bar-fill" style="width:${pct}%"></div></div>
+    <div class="dl-sub"><span>2025年5月4日</span><span>2025年7月1日</span></div>`;
+  return d;
+}
+
+function buildQuote() {
+  const q = QUOTES[new Date().getDay() % QUOTES.length];
+  const d = el('div','quote-card fade-up');
+  d.innerHTML = `<div class="q-mark">"</div><div><div class="q-text">${q.t}</div><div class="q-author">${q.a}</div></div>`;
+  return d;
+}
+
+function buildMood() {
+  const todayKey = fmtFull(new Date());
+  const cur = S.mood?.[todayKey] ?? null;
+  const moods = [['😴','疲惫'],['😐','一般'],['🙂','还好'],['😊','不错'],['🔥','极佳']];
+  const d = el('div','mood-card fade-up');
+  d.innerHTML = `<div class="card-label">今天状态如何？</div><div class="mood-row"></div>`;
+  const row = d.querySelector('.mood-row');
+  moods.forEach(([em, lbl], i) => {
+    const b = el('button','mood-btn');
+    if (cur===i) b.classList.add('on');
+    b.innerHTML = `${em}<span class="ml">${lbl}</span>`;
+    b.onclick = () => {
+      if (!S.mood) S.mood = {};
+      S.mood[todayKey] = i;
+      persist();
+      d.querySelectorAll('.mood-btn').forEach((btn,j)=>btn.classList.toggle('on',j===i));
+      showToast(em + ' 记录啦！');
+    };
+    row.appendChild(b);
+  });
+  return d;
+}
+
+function buildDayStrip() {
+  const wrap = el('div','day-strip fade-up');
+  const ti = todayIdx();
+  DAYS_ZH.forEach((name, i) => {
+    const date = dateForDay(i);
+    const earned = dayEarned(i);
+    const pill = el('div','day-pill');
+    if (i===activeDay) pill.classList.add('on');
+    if (i===ti && i!==activeDay) pill.classList.add('today');
+    pill.innerHTML = `<span class="dp-name">${name}</span><span class="dp-date">${fmt(date)}</span><span class="dp-pts">${earned>0?earned+'分':'—'}</span>`;
+    pill.onclick = () => { activeDay=i; renderToday(); };
+    wrap.appendChild(pill);
+  });
+  return wrap;
+}
+
+function buildSection(title, cat) {
+  const frag = document.createDocumentFragment();
+  const sh = el('div','sh fade-up'); sh.textContent = title;
+  frag.appendChild(sh);
+  allTasks(cat).forEach(task => frag.appendChild(buildTaskCard(task, cat)));
+  const wrapper = el('div'); wrapper.appendChild(frag);
+  return wrapper;
+}
+
+function buildTaskCard(task, cat) {
+  const dayData = S.days[activeDay];
+  const td = dayData.tasks[task.id] || { done:false, extra:0, note:'' };
+  const done = td.done;
+  const ep = task.extra ? (td.extra||0)*task.extra.per : 0;
+  const totalPts = task.pts + ep;
+
+  const card = el('div','task-card fade-up');
+  if (done) card.classList.add('done');
+  if (cat==='wellbeing') card.classList.add('wb');
+
+  card.innerHTML = `
+    <div class="task-row">
+      <div class="chk" data-id="${task.id}">✓</div>
+      <div class="ti">
+        <div class="tn">${task.name}</div>
+        <div class="tm">${task.meta}</div>
+      </div>
+      <div class="pts-badge">+${totalPts}</div>
+    </div>
+    ${task.extra ? `
+    <div class="extra">
+      <div class="extra-label">${task.extra.label}（上限+${task.extra.max*task.extra.per}分）</div>
+      <div class="stepper">
+        <button class="stp" data-id="${task.id}" data-delta="-1">−</button>
+        <span class="sv">${td.extra||0}</span>
+        <button class="stp" data-id="${task.id}" data-delta="1">+</button>
+      </div>
+      <div class="extra-pts">${ep>0?'+'+ep+'分':''}</div>
+    </div>` : ''}
+    <div class="note-row">
+      <textarea class="note-inp" data-id="${task.id}" rows="1" placeholder="备注…">${td.note||''}</textarea>
+
+```
+</div>`;
+```
+
+card.querySelector(’.chk’).onclick = () => toggleTask(task);
+card.querySelectorAll(’.stp’).forEach(btn => {
+btn.onclick = () => changeExtra(task, parseInt(btn.dataset.delta));
+});
+card.querySelector(’.note-inp’).onblur = (e) => saveNote(task.id, e.target.value);
+return card;
+}
+
+function toggleTask(task) {
+const d = S.days[activeDay];
+if (!d.tasks[task.id]) d.tasks[task.id] = { done:false, extra:0, note:’’ };
+const td = d.tasks[task.id];
+const ep = task.extra ? (td.extra||0)*task.extra.per : 0;
+if (!td.done) {
+td.done = true; S.points += task.pts+ep; S.weekEarned += task.pts+ep;
+addLog(`${DAYS_ZH[activeDay]} · ${task.name}`, task.pts+ep, false);
+showToast(`✨ +${task.pts+ep}分！`); bumpPts(); confetti(); checkStreak();
+} else {
+td.done = false; S.points -= task.pts+ep; S.weekEarned -= task.pts+ep;
+addLog(`取消：${task.name}`, task.pts+ep, true);
+}
+updateMonthData(); persist(); renderToday();
+}
+
+function changeExtra(task, delta) {
+const d = S.days[activeDay];
+if (!d.tasks[task.id]) d.tasks[task.id] = { done:false, extra:0, note:’’ };
+const td = d.tasks[task.id];
+const old = td.extra||0, nw = Math.max(0,Math.min(task.extra.max,old+delta));
+if (nw===old) return;
+const diff = (nw-old)*task.extra.per; td.extra = nw;
+if (td.done) {
+S.points+=diff; S.weekEarned+=diff;
+if (diff>0) { addLog(`超额：${task.name}`,diff,false); showToast(`🔥 额外 +${diff}分`); bumpPts(); }
+else addLog(`减少：${task.name}`,Math.abs(diff),true);
+}
+updateMonthData(); persist(); renderToday();
+}
+
+function saveNote(id, val) {
+const d = S.days[activeDay];
+if (!d.tasks[id]) d.tasks[id] = { done:false, extra:0, note:’’ };
+d.tasks[id].note = val; persist();
+}
+
+function buildWater() {
+const key = fmtFull(new Date());
+if (!S.water) S.water = {};
+const count = S.water[key] || 0;
+const card = el(‘div’,‘water-card fade-up’);
+const glasses = Array(8).fill(0).map((_,i) => {
+const g = el(‘div’,‘glass’);
+g.textContent = i<count ? ‘💧’ : ‘·’;
+if (i<count) g.classList.add(‘on’);
+g.onclick = () => {
+S.water[key] = (i<count) ? i : i+1;
+persist();
+const wc = document.getElementById(‘wc’);
+if (wc) { wc.innerHTML = ‘’; buildWater(); } else renderToday();
+};
+return g.outerHTML;
+}).join(’’);
+card.innerHTML = ` <div class="wt-top"><div class="wt-lbl">💧 今日喝水</div><div class="wt-cnt">${count}/8 杯</div></div> <div class="glasses" id="wc">${glasses}</div>`;
+// re-attach onclick after innerHTML
+card.querySelectorAll(’.glass’).forEach((g,i) => {
+g.onclick = () => {
+S.water[key] = (i<count) ? i : i+1;
+persist(); renderToday();
+};
+});
+return card;
+}
+
+function buildPainting() {
+const done = S.paintSteps.filter(Boolean).length;
+const pct = Math.round(done/4*100);
+const steps = [‘起稿 ✏️’,‘线稿 🖊’,‘上色 🎨’,‘收尾 ✅’];
+const card = el(‘div’,‘paint-card fade-up’);
+card.innerHTML = ` <div class="paint-top"> <span class="paint-icon">🖼</span> <div class="paint-info"> <div class="paint-name">本周完整画作</div> <div class="paint-desc">完成全部步骤得 35分；第二幅再 +25分</div> </div> <div class="paint-pts">${S.paintDone?'✓ 35分':'+35分'}</div> </div> <div class="prog-bg"><div class="prog-fill" style="width:${pct}%"></div></div> <div class="prog-labels"><span>${done}/4 步骤</span><span>${pct}%</span></div> <div class="paint-steps"> ${steps.map((s,i)=>`<div class="pstep${S.paintSteps[i]?' on':''}" data-i="${i}">${s}</div>`).join('')} </div>`;
+card.querySelectorAll(’.pstep’).forEach(p => {
+p.onclick = () => {
+const i = parseInt(p.dataset.i);
+S.paintSteps[i] = !S.paintSteps[i];
+const allDone = S.paintSteps.every(Boolean);
+if (allDone && !S.paintDone) {
+S.paintDone=true; S.points+=35; S.weekEarned+=35;
+addLog(‘🖼 完成本周画作！’,35,false); showToast(‘🎉 画作完成！+35分！’); bumpPts(); confetti();
+} else if (!allDone && S.paintDone) {
+S.paintDone=false; S.points-=35; S.weekEarned-=35; addLog(‘取消：画作’,35,true);
+}
+updateMonthData(); persist(); renderToday();
+};
+});
+return card;
+}
+
+/* ═══════════════════════════
+WEEK PANEL
+═══════════════════════════ */
+function renderWeek() {
+const p = document.getElementById(‘panel-week’); p.innerHTML = ‘’;
+const sh = el(‘div’,‘sh’); sh.textContent = ‘本周总结’; p.appendChild(sh);
+
+// summary card
+const card = el(‘div’,‘sum-card’);
+let total = S.paintDone ? 35 : 0;
+const ti = todayIdx();
+let rows = ‘’;
+DAYS_ZH.forEach((d,i) => {
+const date = dateForDay(i), e = dayEarned(i);
+const completed = Object.values(S.days[i].tasks).filter(t=>t.done).length;
+const maxT = DEFAULT_FRENCH.length + DEFAULT_ART.filter(t=>!t.weekly).length + DEFAULT_WELLBEING.length + S.customTasks.length;
+const pct = maxT>0 ? Math.round(completed/maxT*100) : 0;
+total += e;
+rows += `<div class="day-row"> <span class="dr-day">${d}${i===ti?'<span class="pill-badge">今</span>':''}</span> <span class="dr-date">${fmt(date)}</span> <div class="dr-bar-bg"><div class="dr-bar-fill${pct>=80?' full':''}" style="width:${pct}%"></div></div> <span class="dr-score">${e>0?e+'分':'—'}</span> </div>`;
+});
+card.innerHTML = ` <div class="sum-head"><div class="sum-title">本周积分</div><div class="sum-pts">${total}</div></div> ${rows} <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--rim);font-size:11px;color:var(--ink3);"> 画作：${S.paintDone?'✅ 已完成 +35分':'⬜ 未完成'} · 连击：🔥${S.streak}天 </div>`;
+p.appendChild(card);
+
+// reflection
+const wk = weekKey();
+const refCard = el(‘div’,‘sum-card’);
+const saved = S.weekReflections?.[wk] || ‘’;
+refCard.innerHTML = ` <div class="sum-title" style="margin-bottom:12px;">本周感悟 ✍️</div> <div class="ref-wrap" style="padding-top:0;border:none;margin:0;"> <div class="ref-label">记录这一周的感受、进步与收获</div> <textarea class="ref-inp" id="wRef" placeholder="这周最大的突破是什么？有什么想对自己说的？">${saved}</textarea> <div style="display:flex;align-items:center;margin-top:8px;"> <button class="save-btn" onclick="saveRef('week')">保存感悟</button> <span class="saved-badge" id="wSaved">✓ 已保存</span> </div> </div>`;
+p.appendChild(refCard);
+animateIn(p);
+}
+
+function saveRef(type) {
+if (type===‘week’) {
+S.weekReflections[weekKey()] = document.getElementById(‘wRef’).value;
+const badge = document.getElementById(‘wSaved’); badge.classList.add(‘show’); setTimeout(()=>badge.classList.remove(‘show’),2000);
+} else {
+S.monthReflections[monthKey()] = document.getElementById(‘mRef’).value;
+const badge = document.getElementById(‘mSaved’); badge.classList.add(‘show’); setTimeout(()=>badge.classList.remove(‘show’),2000);
+}
+persist(); showToast(‘✓ 已保存’);
+}
+
+/* ═══════════════════════════
+MONTH PANEL
+═══════════════════════════ */
+function renderMonth() {
+const p = document.getElementById(‘panel-month’); p.innerHTML = ‘’;
+const sh = el(‘div’,‘sh’); sh.textContent = ‘月度总览’; p.appendChild(sh);
+
+// calendar card
+const now = new Date(), yr = now.getFullYear(), mo = now.getMonth();
+const firstDay = new Date(yr,mo,1), dim = new Date(yr,mo+1,0).getDate();
+const startDow = (firstDay.getDay()+6)%7;
+const monthNames = [‘一月’,‘二月’,‘三月’,‘四月’,‘五月’,‘六月’,‘七月’,‘八月’,‘九月’,‘十月’,‘十一月’,‘十二月’];
+
+let cells = [‘一’,‘二’,‘三’,‘四’,‘五’,‘六’,‘日’].map(h=>`<div class="cal-hd">${h}</div>`).join(’’);
+for (let b=0;b<startDow;b++) cells += `<div class="cal-cell empty"></div>`;
+
+let totalEarned=0, activeDays=0, fullDays=0;
+const maxT = DEFAULT_FRENCH.length + DEFAULT_ART.filter(t=>!t.weekly).length + DEFAULT_WELLBEING.length + S.customTasks.length;
+
+for (let day=1;day<=dim;day++) {
+const d = new Date(yr,mo,day), key=fmtFull(d);
+const isToday = d.toDateString()===now.toDateString(), isFuture = d>now;
+const data = S.monthData?.[key];
+let cls = ‘cal-cell’;
+if (isToday) cls+=’ today’;
+if (isFuture) cls+=’ future’;
+else if (data?.earned>0) {
+const ratio = maxT>0 ? data.completed/maxT : 0;
+if (ratio>=0.85) { cls+=’ full-day’; fullDays++; }
+else cls+=’ active-day’;
+totalEarned+=data.earned; activeDays++;
+}
+cells+=`<div class="${cls}" title="${data?.earned||0}分">${day}</div>`;
+}
+
+const calCard = el(‘div’,‘sum-card’);
+calCard.innerHTML = ` <div class="sum-head"><div class="sum-title">${yr}年${monthNames[mo]}</div><div style="font-size:11px;color:var(--ink3)">${activeDays}个活跃天</div></div> <div class="cal-grid">${cells}</div> <div style="font-size:10px;color:var(--ink3);text-align:center;margin-top:4px;margin-bottom:12px;">■ 深蓝=高效日 &nbsp;▪ 浅蓝=活跃日 &nbsp;○ 今天</div> <div class="month-stats"> <div class="ms"><div class="ms-val">${totalEarned}</div><div class="ms-lbl">本月积分</div></div> <div class="ms"><div class="ms-val">${activeDays}</div><div class="ms-lbl">活跃天数</div></div> <div class="ms"><div class="ms-val">${fullDays}</div><div class="ms-lbl">高效天数</div></div> </div>`;
+p.appendChild(calCard);
+
+// month reflection
+const mk = monthKey(), saved = S.monthReflections?.[mk]||’’;
+const refCard = el(‘div’,‘sum-card’);
+refCard.innerHTML = ` <div class="sum-title" style="margin-bottom:12px;">本月感悟 ✍️</div> <div class="ref-wrap" style="padding-top:0;border:none;margin:0;"> <div class="ref-label">这个月你经历了什么？有什么进步？</div> <textarea class="ref-inp" id="mRef" placeholder="法语进步了多少？画了几幅？身体状态如何？">${saved}</textarea> <div style="display:flex;align-items:center;margin-top:8px;"> <button class="save-btn" onclick="saveRef('month')">保存感悟</button> <span class="saved-badge" id="mSaved">✓ 已保存</span> </div> </div>`;
+p.appendChild(refCard);
+
+// past weeks reflections
+const pastKeys = Object.keys(S.weekReflections).sort().reverse().slice(0,8);
+if (pastKeys.length>0) {
+const histSh = el(‘div’,‘sh’); histSh.textContent = ‘历史周记录’; p.appendChild(histSh);
+pastKeys.forEach(k => {
+const txt = S.weekReflections[k]; if (!txt) return;
+const c = el(‘div’,‘sum-card’);
+c.style.cssText=‘padding:14px 16px;’;
+c.innerHTML = `<div style="font-size:10px;color:var(--ink3);margin-bottom:6px;letter-spacing:.06em;">📅 ${k}</div><div style="font-size:13px;color:var(--ink2);line-height:1.65;">${txt.replace(/\n/g,'<br>')}</div>`;
+p.appendChild(c);
+});
+}
+
+animateIn(p);
+}
+
+/* ═══════════════════════════
+SHOP PANEL
+═══════════════════════════ */
+function renderShop() {
+const p = document.getElementById(‘panel-shop’); p.innerHTML = ‘’;
+const sh = el(‘div’,‘sh’); sh.textContent = ‘积分兑换’; p.appendChild(sh);
+
+const grid = el(‘div’,‘shop-grid’);
+const allRewards = […DEFAULT_REWARDS, …S.customRewards];
+
+allRewards.forEach(item => {
+const bought = !!S.shopBought[item.id];
+const canAfford = S.points >= item.cost;
+const pct = Math.min(100, Math.round(S.points/item.cost*100));
+const card = el(‘div’,‘shop-card’);
+if (bought) card.classList.add(‘bought’);
+else if (!canAfford) card.classList.add(‘locked’);
+card.innerHTML = ` <span class="shop-emoji">${item.emoji}</span> <div class="shop-name">${item.name}</div> ${!bought?`<div class="sp-bar-bg"><div class="sp-bar-fill" style="width:${pct}%"></div></div>`:''} <div class="shop-cost">${bought?'✓ 已兑换':item.cost+' 分'}</div>`;
+if (!bought && canAfford) card.onclick = () => buyItem(item);
+grid.appendChild(card);
+});
+p.appendChild(grid);
+
+// add custom reward
+const addBtn = el(‘button’,‘add-reward-btn’);
+addBtn.innerHTML = ‘<span style="font-size:18px">＋</span> 添加自定义奖励’;
+addBtn.onclick = openRewardModal;
+p.appendChild(addBtn);
+
+const info = el(‘div’,‘info-box’);
+info.innerHTML = `💡 <strong>积分参考</strong><br> 法语任务满分 <strong>43分/天</strong> · 加上艺术+身心约 <strong>65分/天</strong><br> 完美完成一周约 <strong>400–455分</strong> · 7天全勤额外 <strong>+20分</strong><br> <span style="color:var(--sky-d)">当前积分：${S.points}</span>`;
+p.appendChild(info);
+animateIn(p);
+}
+
+function buyItem(item) {
+if (S.points<item.cost) return;
+if (!confirm(`确定用 ${item.cost} 分兑换「${item.name}」吗？`)) return;
+S.points-=item.cost; S.shopBought[item.id]=true;
+addLog(`兑换：${item.name}`, item.cost, true);
+showToast(`🎁 享受你的${item.name}！`);
+persist(); bumpPts(); renderShop();
+}
+
+/* ═══════════════════════════
+LOG PANEL
+═══════════════════════════ */
+function renderLog() {
+const p = document.getElementById(‘panel-log’); p.innerHTML = ‘’;
+const sh = el(‘div’,‘sh’); sh.textContent = ‘积分记录’; p.appendChild(sh);
+if (!S.log.length) {
+const empty = el(‘div’);
+empty.style.cssText=‘text-align:center;padding:48px 0;color:var(–ink3);font-size:13px;’;
+empty.innerHTML=‘还没有记录<br><span style="font-size:24px;display:block;margin-top:12px;">📋</span>’;
+p.appendChild(empty); return;
+}
+S.log.forEach(l => {
+const row = el(‘div’,‘log-item’);
+row.innerHTML = `<span class="log-time">${l.time}</span><span class="log-text">${l.text}</span><span class="log-pts ${l.neg?'neg':'pos'}">${l.neg?'−':'+'}${l.pts}分</span>`;
+p.appendChild(row);
+});
+// reset btn
+const rb = el(‘button’,‘sheet-btn danger’);
+rb.textContent = ‘↺ 重置本周数据’;
+rb.style.cssText=‘margin-top:24px;border-radius:12px;’;
+rb.onclick = () => {
+if (confirm(‘确定重置本周所有数据吗？积分、记录和任务打卡都会清零。历史总结不受影响。’)) {
+S = fresh(); persist(); switchTab(‘today’); showToast(‘🔄 已重置，新一周开始！’);
+}
+};
+p.appendChild(rb);
+animateIn(p);
+}
+
+/* ═══════════════════════════
+MODALS
+═══════════════════════════ */
+function openRewardModal() {
+selectedEmoji = ‘🎁’;
+const grid = document.getElementById(‘emojiGrid’);
+grid.innerHTML = ‘’;
+EMOJIS.forEach(em => {
+const b = el(‘button’,‘eg-btn’);
+if (em===selectedEmoji) b.classList.add(‘on’);
+b.textContent = em;
+b.onclick = () => { selectedEmoji=em; grid.querySelectorAll(’.eg-btn’).forEach(x=>x.classList.toggle(‘on’,x.textContent===em)); };
+grid.appendChild(b);
+});
+document.getElementById(‘rName’).value=’’;
+document.getElementById(‘rCost’).value=’’;
+document.getElementById(‘rewardOverlay’).classList.add(‘show’);
+}
+function closeRewardModal(e) {
+if (!e || e.target===document.getElementById(‘rewardOverlay’)) document.getElementById(‘rewardOverlay’).classList.remove(‘show’);
+}
+function submitReward() {
+const name = document.getElementById(‘rName’).value.trim();
+const cost = parseInt(document.getElementById(‘rCost’).value);
+if (!name || !cost || cost<1) { showToast(‘请填写名称和积分’); return; }
+S.customRewards.push({ id:‘cr_’+Date.now(), name, emoji:selectedEmoji, cost });
+persist(); closeRewardModal(); renderShop(); showToast(‘✓ 奖励已添加！’);
+}
+
+function openTaskModal() {
+document.getElementById(‘tName’).value=’’;
+document.getElementById(‘tPts’).value=’’;
+document.getElementById(‘taskOverlay’).classList.add(‘show’);
+}
+function closeTaskModal(e) {
+if (!e || e.target===document.getElementById(‘taskOverlay’)) document.getElementById(‘taskOverlay’).classList.remove(‘show’);
+}
+function submitTask() {
+const name = document.getElementById(‘tName’).value.trim();
+const pts = parseInt(document.getElementById(‘tPts’).value);
+const cat = document.getElementById(‘tCat’).value;
+if (!name || !pts || pts<1) { showToast(‘请填写名称和积分’); return; }
+S.customTasks.push({ id:‘ct_’+Date.now(), name, meta:‘自定义任务’, pts, cat, extra:null });
+persist(); closeTaskModal(); renderToday(); showToast(‘✓ 任务已添加！’);
+}
+
+/* ═══════════════════════════
+HELPERS
+═══════════════════════════ */
+function el(tag, cls=’’) { const e=document.createElement(tag); if(cls) e.className=cls; return e; }
+
+function animateIn(p) {
+p.querySelectorAll(’.fade-up’).forEach((el,i) => {
+el.style.animationDelay = (i*0.04)+‘s’;
+});
+}
+
+function addLog(text,pts,neg) {
+const now=new Date();
+const time=`${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+S.log.unshift({text,pts,neg,time});
+if(S.log.length>100) S.log.pop();
+}
+
+function showToast(msg) {
+const t=document.getElementById(‘toast’); t.textContent=msg; t.classList.add(‘show’);
+clearTimeout(t._timer); t._timer=setTimeout(()=>t.classList.remove(‘show’),2000);
+}
+
+function bumpPts() {
+document.getElementById(‘ptsNum’).textContent=S.points;
+document.getElementById(‘streakTxt’).textContent=‘🔥’+S.streak+‘天’;
+const pill=document.getElementById(‘ptsPill’); pill.classList.add(‘pop’);
+setTimeout(()=>pill.classList.remove(‘pop’),400);
+}
+
+function confetti() {
+const colors=[’#3d7eaa’,’#d4e8f5’,’#b8965a’,’#3a7d5c’,’#ddd’];
+for(let i=0;i<12;i++){
+const c=document.createElement(‘div’); c.className=‘cf’;
+const size=4+Math.random()*8;
+c.style.cssText=`left:${20+Math.random()*60}%;top:${30+Math.random()*20}%;width:${size}px;height:${size}px;background:${colors[i%colors.length]};border-radius:${Math.random()>.5?'50%':'3px'};animation-delay:${Math.random()*0.4}s;animation-duration:${0.7+Math.random()*0.5}s;`;
+document.body.appendChild(c); setTimeout(()=>c.remove(),1500);
+}
+}
+
+function checkStreak() {
+const today=new Date().toDateString();
+if(S.lastDate!==today){
+S.lastDate=today; S.streak=(S.streak||0)+1;
+if(S.streak===7){ S.points+=20; S.weekEarned+=20; addLog(‘🏆 全勤奖励！连续7天’,20,false); showToast(‘🏆 全勤奖励 +20分！’); }
+}
+bumpPts();
+}
+
+function updateMonthData() {
+const key=fmtFull(dateForDay(activeDay));
+const completed=Object.values(S.days[activeDay].tasks).filter(t=>t.done).length;
+const total=DEFAULT_FRENCH.length+DEFAULT_ART.filter(t=>!t.weekly).length+DEFAULT_WELLBEING.length+S.customTasks.length;
+if(!S.monthData) S.monthData={};
+S.monthData[key]={earned:dayEarned(activeDay),completed,total};
+}
+
+/* ═══════════════════════════
+NAV WIRING
+═══════════════════════════ */
+document.querySelectorAll(’.nav-tab, .bn-tab’).forEach(btn => {
+btn.onclick = () => switchTab(btn.dataset.tab);
+});
+
+/* ═══════════════════════════
+BOOT
+═══════════════════════════ */
+bumpPts();
+renderToday();
+</script>
+
+</body>
+</html>
