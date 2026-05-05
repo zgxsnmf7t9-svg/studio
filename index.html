@@ -1,0 +1,1455 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>追梦 · Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Outfit:wght@300;400;500;600&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#f5f6f8;
+  --white:#ffffff;
+  --ink:#111111;
+  --ink2:#444444;
+  --ink3:#888888;
+  --line:#e8e8e8;
+  --line2:#f0f0f0;
+  --blue:#6aaed6;
+  --blue-l:#d6eaf5;
+  --blue-ll:#eef6fb;
+  --blue-d:#3d87b8;
+  --black:#111111;
+  --green:#7bc8a4;
+  --r:14px;
+  --rs:10px;
+  --sh:0 2px 12px rgba(0,0,0,.06);
+  --sh2:0 6px 24px rgba(0,0,0,.10);
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Outfit','Noto Sans SC',sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.5}
+
+/* ── LAYOUT ── */
+#app{display:flex;flex-direction:column;height:100vh;max-width:480px;margin:0 auto;background:var(--white);position:relative;box-shadow:0 0 40px rgba(0,0,0,.08)}
+.screen{display:none;flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:90px}
+.screen.on{display:block}
+::-webkit-scrollbar{width:0}
+
+/* ── TOP HEADER ── */
+.top-bar{
+  background:var(--white);
+  padding:16px 20px 12px;
+  border-bottom:1px solid var(--line2);
+  position:sticky;top:0;z-index:10;
+}
+.top-row{display:flex;align-items:center;justify-content:space-between}
+.page-name{font-family:'Instrument Serif',serif;font-size:22px;color:var(--ink);line-height:1}
+.page-sub{font-size:11px;color:var(--ink3);margin-top:3px;letter-spacing:.5px}
+
+/* POINTS PILL in header */
+.pts-pill{
+  display:flex;align-items:center;gap:6px;
+  background:var(--ink);
+  color:white;
+  padding:6px 14px;
+  border-radius:20px;
+  cursor:pointer;
+  transition:.2s;
+}
+.pts-pill:hover{background:#333}
+.pts-pill .num{font-family:'Instrument Serif',serif;font-size:18px;line-height:1}
+.pts-pill .lbl{font-size:10px;color:#aaa;letter-spacing:.5px}
+
+/* ── BOTTOM NAV ── */
+.bottom-nav{
+  position:absolute;bottom:0;left:0;right:0;
+  height:72px;
+  background:var(--white);
+  border-top:1px solid var(--line2);
+  display:flex;
+  z-index:20;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.nav-tab{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:4px;cursor:pointer;padding:8px 0;
+  color:var(--ink3);transition:.15s;border:none;background:none;
+}
+.nav-tab .n-icon{font-size:20px;line-height:1}
+.nav-tab .n-label{font-size:10px;letter-spacing:.3px}
+.nav-tab.on{color:var(--blue-d)}
+.nav-tab.on .n-icon{transform:scale(1.1)}
+
+/* ── COUNTDOWN BANNER ── */
+.countdown-banner{
+  margin:16px 16px 0;
+  background:var(--ink);
+  border-radius:var(--r);
+  padding:16px 20px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.cd-left{flex:1}
+.cd-title{font-size:10px;color:#666;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px}
+.cd-units{display:flex;align-items:baseline;gap:4px}
+.cd-block{text-align:center}
+.cd-n{font-family:'Instrument Serif',serif;font-size:28px;color:var(--blue);line-height:1;display:block}
+.cd-u{font-size:9px;color:#555;letter-spacing:.5px}
+.cd-sep{font-size:20px;color:#333;padding:0 2px}
+.cd-quote{font-family:'Instrument Serif',serif;font-style:italic;font-size:12px;color:#666;max-width:120px;text-align:right;line-height:1.5}
+
+/* ── SECTION ── */
+.sec{padding:14px 16px 0}
+.sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.sec-title{font-size:12px;color:var(--ink3);letter-spacing:1px;text-transform:uppercase;font-weight:500}
+.sec-action{font-size:12px;color:var(--blue-d);cursor:pointer;font-weight:500}
+
+/* ── TASK CARD ── */
+.task-card{
+  background:var(--white);border:1.5px solid var(--line);border-radius:var(--r);
+  padding:14px 16px;margin-bottom:8px;
+  display:flex;align-items:center;gap:14px;
+  cursor:pointer;transition:.18s;
+  box-shadow:var(--sh);
+}
+.task-card:active{transform:scale(.98)}
+.task-card.done{border-color:var(--blue-l);background:var(--blue-ll)}
+.task-card.done .t-name{text-decoration:line-through;color:var(--ink3)}
+.t-check{
+  width:26px;height:26px;border-radius:50%;
+  border:2px solid var(--line);
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;font-size:13px;transition:.18s;
+  color:transparent;
+}
+.task-card.done .t-check{background:var(--blue);border-color:var(--blue);color:white}
+.t-body{flex:1;min-width:0}
+.t-name{font-size:14px;color:var(--ink);font-weight:400}
+.t-meta{font-size:11px;color:var(--ink3);margin-top:2px}
+.t-pts{font-family:'Instrument Serif',serif;font-size:17px;color:var(--blue-d);white-space:nowrap}
+.task-card.done .t-pts{color:var(--green)}
+
+/* BONUS CARD */
+.bonus-card{
+  background:var(--blue-ll);border:1.5px solid var(--blue-l);
+  border-radius:var(--r);padding:12px 16px;margin-bottom:8px;
+  display:flex;align-items:center;gap:12px;
+}
+.bonus-info{flex:1}
+.bonus-name{font-size:13px;color:var(--ink);font-weight:500}
+.bonus-sub{font-size:11px;color:var(--ink3)}
+.stepper{display:flex;align-items:center;gap:10px}
+.s-btn{
+  width:28px;height:28px;border-radius:8px;border:1.5px solid var(--line);
+  background:white;cursor:pointer;font-size:16px;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--ink2);transition:.15s;
+}
+.s-btn:active{background:var(--blue);color:white;border-color:var(--blue)}
+.s-val{font-weight:600;font-size:15px;min-width:22px;text-align:center}
+.bonus-earned{font-family:'Instrument Serif',serif;font-size:16px;color:var(--blue-d);min-width:44px;text-align:right}
+
+/* STREAK ROW */
+.streak-row{display:flex;gap:6px;padding:4px 0}
+.s-dot{
+  flex:1;height:36px;border-radius:8px;
+  background:var(--line2);border:1.5px solid transparent;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  transition:.15s;
+}
+.s-dot .sd{font-size:9px;color:var(--ink3);letter-spacing:.3px}
+.s-dot .sn{font-size:10px;color:var(--ink2);font-weight:500}
+.s-dot.done{background:var(--blue);border-color:var(--blue)}
+.s-dot.done .sd,.s-dot.done .sn{color:white}
+.s-dot.today{border-color:var(--blue-d);background:var(--blue-ll)}
+.s-dot.today .sd,.s-dot.today .sn{color:var(--blue-d)}
+
+/* PROGRESS */
+.prog-bar{height:7px;background:var(--line2);border-radius:4px;overflow:hidden;margin:8px 0 4px}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--blue-d));border-radius:4px;transition:width .5s ease}
+
+/* WHITE CARD */
+.wcard{background:var(--white);border:1.5px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:10px;box-shadow:var(--sh)}
+
+/* ── WELLBEING GRID ── */
+.wb-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.wb-item{
+  background:var(--white);border:1.5px solid var(--line);border-radius:var(--r);
+  padding:14px 12px;cursor:pointer;transition:.15s;
+  display:flex;flex-direction:column;align-items:flex-start;gap:6px;
+}
+.wb-item:active{transform:scale(.97)}
+.wb-item.done{background:var(--blue-ll);border-color:var(--blue-l)}
+.wb-em{font-size:24px;line-height:1}
+.wb-n{font-size:13px;color:var(--ink);font-weight:400}
+.wb-p{font-size:11px;color:var(--blue-d);font-weight:500}
+.wb-item.done .wb-p{color:var(--green)}
+
+/* MOOD */
+.mood-row{display:flex;gap:8px;justify-content:space-between}
+.mood-opt{
+  flex:1;height:44px;border-radius:10px;border:1.5px solid var(--line);
+  background:white;cursor:pointer;font-size:20px;
+  display:flex;align-items:center;justify-content:center;transition:.15s;
+}
+.mood-opt:active{transform:scale(.9)}
+.mood-opt.sel{border-color:var(--blue);background:var(--blue-ll)}
+
+/* ── SHOP ── */
+.shop-header{
+  background:var(--ink);margin:16px 16px 0;border-radius:var(--r);
+  padding:16px 20px;display:flex;align-items:center;justify-content:space-between;
+}
+.shop-pts-num{font-family:'Instrument Serif',serif;font-size:36px;color:var(--blue);line-height:1}
+.shop-pts-lbl{font-size:10px;color:#666;letter-spacing:1px;margin-top:2px}
+.shop-stats{display:flex;gap:16px}
+.shop-stat{text-align:right}
+.shop-stat-n{font-family:'Instrument Serif',serif;font-size:18px;color:white;line-height:1}
+.shop-stat-l{font-size:9px;color:#666;letter-spacing:.5px}
+
+.shop-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.shop-item{
+  background:var(--white);border:1.5px solid var(--line);border-radius:var(--r);
+  padding:14px;cursor:pointer;transition:.18s;position:relative;
+}
+.shop-item:active{transform:scale(.97)}
+.shop-item.afford{border-color:var(--blue-l);background:var(--blue-ll)}
+.sh-em{font-size:26px;margin-bottom:8px}
+.sh-name{font-size:13px;color:var(--ink);font-weight:500;margin-bottom:4px}
+.sh-cost{font-family:'Instrument Serif',serif;font-size:18px;color:var(--blue-d)}
+.sh-cost.no{color:var(--ink3)}
+.afford-tag{
+  position:absolute;top:8px;right:8px;
+  background:var(--blue);color:white;font-size:9px;
+  padding:2px 7px;border-radius:10px;letter-spacing:.5px;
+}
+
+/* LEDGER */
+.ledger-item{
+  display:flex;align-items:center;gap:12px;padding:12px 0;
+  border-bottom:1px solid var(--line2);
+}
+.ledger-icon{width:36px;height:36px;border-radius:10px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.ledger-name{font-size:13px;color:var(--ink);flex:1}
+.ledger-time{font-size:11px;color:var(--ink3)}
+.ledger-amt{font-family:'Instrument Serif',serif;font-size:16px;font-weight:500}
+.ledger-amt.earn{color:var(--blue-d)}
+.ledger-amt.spend{color:#e07070}
+
+/* ── STATS ── */
+.stat-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px}
+.stat-box{background:var(--white);border:1.5px solid var(--line);border-radius:var(--r);padding:14px 12px;text-align:center;box-shadow:var(--sh)}
+.stat-n{font-family:'Instrument Serif',serif;font-size:28px;color:var(--ink);line-height:1}
+.stat-l{font-size:10px;color:var(--ink3);margin-top:4px;letter-spacing:.3px}
+
+/* MINI BAR CHART */
+.bar-chart{display:flex;align-items:flex-end;gap:5px;height:64px;margin:8px 0}
+.bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px}
+.bar{width:100%;border-radius:4px 4px 0 0;background:var(--blue-l);transition:height .4s ease;min-height:3px}
+.bar.today{background:var(--blue-d)}
+.bar-lbl{font-size:9px;color:var(--ink3)}
+
+/* CAL GRID */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin:8px 0}
+.cal-cell{aspect-ratio:1;border-radius:6px;background:var(--line2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px}
+.cal-cell .cd{font-size:9px;color:var(--ink3)}
+.cal-cell.has{background:var(--blue);} .cal-cell.has .cd{color:white}
+.cal-cell.now{border:2px solid var(--ink)} .cal-cell.now .cd{color:var(--ink);font-weight:700}
+.cal-cell.has.now{background:var(--blue-d)}
+
+/* ── SUMMARY ── */
+.summ-tabs{display:flex;gap:6px;padding:14px 16px 0}
+.stab{padding:7px 16px;border-radius:20px;font-size:12px;cursor:pointer;border:1.5px solid var(--line);color:var(--ink3);transition:.15s;background:white}
+.stab.on{background:var(--ink);color:white;border-color:var(--ink)}
+
+.arch-card{background:var(--white);border:1.5px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:10px}
+.arch-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.arch-key{font-family:'Instrument Serif',serif;font-size:16px;color:var(--ink)}
+.arch-tag{font-size:10px;padding:3px 9px;border-radius:10px;background:var(--blue-l);color:var(--blue-d);letter-spacing:.3px}
+.arch-tag.arc{background:var(--ink);color:white}
+.arch-label{font-size:10px;color:var(--ink3);letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px;margin-top:10px}
+.arch-body{font-size:13px;color:var(--ink2);line-height:1.7}
+
+/* ── TEXTAREA ── */
+textarea{
+  width:100%;border:1.5px solid var(--line);border-radius:var(--rs);
+  padding:12px;font-family:'Outfit','Noto Sans SC',sans-serif;font-size:13px;
+  color:var(--ink);resize:none;outline:none;background:var(--bg);
+  transition:.15s;line-height:1.7;
+}
+textarea:focus{border-color:var(--blue);background:white}
+
+/* ADD ROW */
+.add-row{display:flex;gap:6px;padding-top:10px;border-top:1px solid var(--line2);margin-top:6px}
+.add-row input{flex:1;border:1.5px solid var(--line);border-radius:var(--rs);padding:9px 12px;font-size:13px;font-family:'Outfit','Noto Sans SC',sans-serif;outline:none;background:var(--bg);color:var(--ink);transition:.15s}
+.add-row input:focus{border-color:var(--blue);background:white}
+.add-row .pts-in{width:64px;flex:none;text-align:center}
+.add-row .emoji-in{width:44px;flex:none;text-align:center}
+
+/* ── BUTTONS ── */
+.btn{padding:10px 20px;border-radius:var(--rs);font-family:'Outfit',sans-serif;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:.15s;letter-spacing:.3px}
+.btn:active{transform:scale(.97)}
+.btn-dark{background:var(--ink);color:white}
+.btn-dark:hover{background:#333}
+.btn-blue{background:var(--blue-d);color:white}
+.btn-outline{background:transparent;border:1.5px solid var(--line);color:var(--ink2)}
+.btn-sm{padding:7px 14px;font-size:12px}
+.btn-xs{padding:5px 10px;font-size:11px;border-radius:8px}
+.btn-icon{width:32px;height:32px;border-radius:var(--rs);display:flex;align-items:center;justify-content:center;font-size:16px;border:1.5px solid var(--line);background:white;cursor:pointer;transition:.15s}
+.btn-icon:hover{border-color:var(--blue);color:var(--blue-d)}
+
+/* ── TOAST ── */
+#toast{
+  position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(10px);
+  background:var(--ink);color:white;padding:10px 20px;border-radius:20px;
+  font-size:13px;z-index:999;opacity:0;transition:.25s;pointer-events:none;
+  white-space:nowrap;max-width:85vw;text-overflow:ellipsis;overflow:hidden;
+  box-shadow:0 8px 24px rgba(0,0,0,.2);
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── POPUP ── */
+.popup-bg{
+  position:fixed;inset:0;background:rgba(0,0,0,.35);backdrop-filter:blur(4px);
+  z-index:50;display:flex;align-items:flex-end;justify-content:center;
+  opacity:0;pointer-events:none;transition:.25s;
+}
+.popup-bg.on{opacity:1;pointer-events:all}
+.popup{
+  background:white;border-radius:20px 20px 0 0;padding:24px 20px 32px;
+  width:100%;max-width:480px;transform:translateY(20px);transition:.25s;
+}
+.popup-bg.on .popup{transform:translateY(0)}
+.popup-title{font-family:'Instrument Serif',serif;font-size:20px;margin-bottom:4px}
+.popup-sub{font-size:12px;color:var(--ink3);margin-bottom:16px}
+.popup-handle{width:36px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 16px}
+
+/* CONFIRM POPUP */
+.confirm-popup{
+  position:fixed;inset:0;background:rgba(0,0,0,.35);backdrop-filter:blur(4px);
+  z-index:60;display:flex;align-items:center;justify-content:center;padding:20px;
+  opacity:0;pointer-events:none;transition:.2s;
+}
+.confirm-popup.on{opacity:1;pointer-events:all}
+.confirm-box{background:white;border-radius:20px;padding:24px;width:100%;max-width:320px;box-shadow:0 16px 48px rgba(0,0,0,.15)}
+.confirm-em{font-size:40px;text-align:center;margin-bottom:12px}
+.confirm-title{font-family:'Instrument Serif',serif;font-size:18px;text-align:center;margin-bottom:6px}
+.confirm-desc{font-size:13px;color:var(--ink3);text-align:center;margin-bottom:20px;line-height:1.6}
+.confirm-btns{display:flex;gap:8px}
+.confirm-btns button{flex:1}
+
+/* ── ACHIEVEMENT ── */
+.ach-flash{
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.8);
+  background:white;border-radius:20px;padding:32px 28px;text-align:center;
+  box-shadow:0 20px 60px rgba(0,0,0,.15);z-index:70;
+  opacity:0;pointer-events:none;transition:.3s cubic-bezier(.34,1.56,.64,1);
+}
+.ach-flash.on{opacity:1;pointer-events:all;transform:translate(-50%,-50%) scale(1)}
+.ach-em{font-size:52px;margin-bottom:8px}
+.ach-title{font-family:'Instrument Serif',serif;font-size:20px;color:var(--ink)}
+.ach-sub{font-size:12px;color:var(--ink3);margin-top:4px}
+.ach-pts{font-family:'Instrument Serif',serif;font-size:30px;color:var(--blue-d);margin-top:10px}
+
+/* SCROLL FADE TOP */
+.scroll-fade-top{background:linear-gradient(var(--white),transparent);height:16px;position:sticky;top:0;z-index:5;pointer-events:none;margin-bottom:-16px}
+
+/* EMPTY STATE */
+.empty{text-align:center;padding:32px 20px;color:var(--ink3);font-size:13px;line-height:2}
+
+/* WEEKLY CAL BAR */
+.week-bar{display:flex;gap:5px}
+.wday{
+  flex:1;border-radius:10px;padding:10px 4px;text-align:center;
+  background:var(--line2);border:1.5px solid transparent;transition:.15s;cursor:pointer;
+}
+.wday .wd{font-size:9px;color:var(--ink3);letter-spacing:.3px}
+.wday .wn{font-size:13px;color:var(--ink);font-weight:500;margin:3px 0}
+.wday .wdot{width:6px;height:6px;border-radius:50%;background:transparent;margin:0 auto}
+.wday.has{background:var(--blue-ll);border-color:var(--blue-l)}
+.wday.has .wdot{background:var(--blue)}
+.wday.today{background:var(--ink);border-color:var(--ink)}
+.wday.today .wd,.wday.today .wn{color:white}
+.wday.today .wdot{background:var(--blue)}
+
+/* NOTES CAL */
+.note-day{padding:12px 0;border-bottom:1px solid var(--line2)}
+.note-day-head{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.note-date{font-family:'Instrument Serif',serif;font-size:14px;color:var(--ink)}
+.note-mood{font-size:16px}
+.note-body{font-size:13px;color:var(--ink2);line-height:1.7}
+
+/* Tabs for weekly tasks */
+.wtab-row{display:flex;gap:6px;overflow-x:auto;padding:12px 16px 0}
+.wtab{padding:6px 14px;border-radius:20px;font-size:12px;cursor:pointer;border:1.5px solid var(--line);color:var(--ink3);white-space:nowrap;background:white;transition:.15s}
+.wtab.on{background:var(--ink);color:white;border-color:var(--ink)}
+.wtab-content{display:none}.wtab-content.on{display:block}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- TOP BAR (shared) -->
+  <div class="top-bar" id="top-bar">
+    <div class="top-row">
+      <div>
+        <div class="page-name" id="top-title">今日修炼</div>
+        <div class="page-sub" id="top-sub">加载中...</div>
+      </div>
+      <div class="pts-pill" onclick="showPtsLedger()">
+        <div>
+          <div class="num" id="pts-display">0</div>
+          <div class="lbl">积分</div>
+        </div>
+        <span style="font-size:14px;color:#888">›</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ SCREEN 1: TODAY ══════════ -->
+  <div class="screen on" id="s-today">
+    <!-- Countdown -->
+    <div class="countdown-banner">
+      <div class="cd-left">
+        <div class="cd-title">距离 7月1日 截止</div>
+        <div class="cd-units">
+          <div class="cd-block"><span class="cd-n" id="cd-d">--</span><span class="cd-u">天</span></div>
+          <span class="cd-sep">:</span>
+          <div class="cd-block"><span class="cd-n" id="cd-h">--</span><span class="cd-u">时</span></div>
+          <span class="cd-sep">:</span>
+          <div class="cd-block"><span class="cd-n" id="cd-m">--</span><span class="cd-u">分</span></div>
+          <span class="cd-sep">:</span>
+          <div class="cd-block"><span class="cd-n" id="cd-s">--</span><span class="cd-u">秒</span></div>
+        </div>
+      </div>
+      <div class="cd-quote" id="daily-quote"></div>
+    </div>
+
+    <!-- Streak -->
+    <div class="sec" style="margin-top:14px">
+      <div class="sec-head">
+        <span class="sec-title">本周打卡</span>
+        <span id="streak-label" style="font-size:12px;color:var(--blue-d)"></span>
+      </div>
+      <div class="streak-row" id="streak-row"></div>
+      <div class="prog-bar"><div class="prog-fill" id="streak-bar" style="width:0%"></div></div>
+      <div style="font-size:11px;color:var(--ink3)">满7天全勤额外 <b style="color:var(--blue-d)">+30分</b></div>
+    </div>
+
+    <!-- Daily Tasks -->
+    <div class="sec" style="margin-top:14px">
+      <div class="sec-head">
+        <span class="sec-title">每日必修</span>
+        <span class="sec-action" onclick="openAddTask()">+ 添加</span>
+      </div>
+      <div id="daily-list"></div>
+    </div>
+
+    <!-- Bonus -->
+    <div class="sec">
+      <div class="sec-head"><span class="sec-title">超额挑战</span></div>
+      <div id="bonus-list"></div>
+    </div>
+
+    <!-- Today note -->
+    <div class="sec">
+      <div class="sec-head"><span class="sec-title">今日备忘</span></div>
+      <div class="wcard">
+        <textarea id="today-note" rows="3" placeholder="今天画了什么？法语学到了什么？有什么想说的..." onblur="saveTodayNote()"></textarea>
+        <div style="display:flex;justify-content:flex-end;margin-top:8px">
+          <button class="btn btn-dark btn-sm" onclick="saveTodayNote(true)">保存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ SCREEN 2: PLAN ══════════ -->
+  <div class="screen" id="s-plan">
+    <div class="sec" style="margin-top:16px">
+      <div class="sec-head"><span class="sec-title">本周日历</span></div>
+      <div class="week-bar" id="week-bar"></div>
+    </div>
+
+    <div class="sec" style="margin-top:14px">
+      <div class="wtab-row" id="plan-tabs"></div>
+    </div>
+
+    <!-- Tab contents -->
+    <div class="sec" id="plan-tab-contents"></div>
+
+    <!-- Weekly Summary -->
+    <div class="sec" style="margin-top:14px">
+      <div class="sec-head">
+        <span class="sec-title">本周总结</span>
+        <span class="sec-action" onclick="archiveWeekly()">归档</span>
+      </div>
+      <div class="wcard">
+        <div style="font-size:11px;color:var(--ink3);margin-bottom:6px;letter-spacing:.5px">本周亮点</div>
+        <textarea id="w-highlight" rows="2" placeholder="这周最骄傲的事..." onblur="saveWeekly()"></textarea>
+        <div style="font-size:11px;color:var(--ink3);margin:10px 0 6px;letter-spacing:.5px">本周感悟</div>
+        <textarea id="w-reflect" rows="2" placeholder="关于创作、学习或自己的想法..." onblur="saveWeekly()"></textarea>
+        <div style="font-size:11px;color:var(--ink3);margin:10px 0 6px;letter-spacing:.5px">下周计划</div>
+        <textarea id="w-next" rows="2" placeholder="下周最想做的一件事..." onblur="saveWeekly()"></textarea>
+        <div style="font-size:11px;color:var(--ink3);margin-top:8px" id="w-save-time">未保存</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ SCREEN 3: WELLBEING ══════════ -->
+  <div class="screen" id="s-well">
+    <div class="sec" style="margin-top:16px">
+      <div class="sec-head">
+        <span class="sec-title">今日关怀</span>
+        <span class="sec-action" onclick="openAddWb()">+ 自定义</span>
+      </div>
+      <div class="wb-grid" id="wb-grid"></div>
+    </div>
+
+    <!-- Mood -->
+    <div class="sec">
+      <div class="sec-head"><span class="sec-title">今日状态</span></div>
+      <div class="wcard">
+        <div class="mood-row" id="mood-row">
+          <div class="mood-opt" data-m="5" onclick="setMood(5)">😄</div>
+          <div class="mood-opt" data-m="4" onclick="setMood(4)">🙂</div>
+          <div class="mood-opt" data-m="3" onclick="setMood(3)">😐</div>
+          <div class="mood-opt" data-m="2" onclick="setMood(2)">😕</div>
+          <div class="mood-opt" data-m="1" onclick="setMood(1)">😔</div>
+        </div>
+        <textarea id="mood-note" rows="2" style="margin-top:12px" placeholder="今天的能量状态、心情或者随便什么..." onblur="saveMoodNote()"></textarea>
+      </div>
+    </div>
+
+    <!-- Monthly review -->
+    <div class="sec">
+      <div class="sec-head">
+        <span class="sec-title">月度回顾</span>
+        <span class="sec-action" onclick="archiveMonthly()">归档</span>
+      </div>
+      <div class="wcard">
+        <div style="font-size:11px;color:var(--ink3);margin-bottom:6px">本月最大收获</div>
+        <textarea id="m-gain" rows="2" placeholder="这个月让我最有成就感的是..." onblur="saveMonthly()"></textarea>
+        <div style="font-size:11px;color:var(--ink3);margin:10px 0 6px">给未来的自己</div>
+        <textarea id="m-letter" rows="3" placeholder="写给考上美院后的自己..." onblur="saveMonthly()"></textarea>
+        <div style="font-size:11px;color:var(--ink3);margin-top:8px" id="m-save-time">未保存</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ SCREEN 4: SHOP ══════════ -->
+  <div class="screen" id="s-shop">
+    <!-- Points header -->
+    <div class="shop-header" id="shop-header">
+      <div>
+        <div class="shop-pts-num" id="shop-pts">0</div>
+        <div class="shop-pts-lbl">当前积分</div>
+      </div>
+      <div class="shop-stats">
+        <div class="shop-stat">
+          <div class="shop-stat-n" id="shop-earned">0</div>
+          <div class="shop-stat-l">累计赚取</div>
+        </div>
+        <div class="shop-stat">
+          <div class="shop-stat-n" id="shop-spent">0</div>
+          <div class="shop-stat-l">累计消费</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec" style="margin-top:14px">
+      <div class="sec-head">
+        <span class="sec-title">积分商城</span>
+        <span class="sec-action" onclick="openAddReward()">+ 自定义</span>
+      </div>
+      <div class="shop-grid" id="shop-grid"></div>
+    </div>
+
+    <!-- Ledger -->
+    <div class="sec" style="margin-top:4px">
+      <div class="sec-head"><span class="sec-title">收支明细</span></div>
+      <div class="wcard" id="ledger-list"></div>
+    </div>
+  </div>
+
+  <!-- ══════════ SCREEN 5: STATS ══════════ -->
+  <div class="screen" id="s-stats">
+    <div class="sec" style="margin-top:16px">
+      <div class="stat-row" id="stat-row"></div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head"><span class="sec-title">积分趋势（近14天）</span></div>
+      <div class="wcard">
+        <div class="bar-chart" id="pts-chart"></div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head"><span class="sec-title">打卡日历</span></div>
+      <div class="wcard">
+        <div class="cal-grid" id="full-cal"></div>
+      </div>
+    </div>
+
+    <!-- Summary archive tabs -->
+    <div class="summ-tabs" id="summ-tabs">
+      <button class="stab on" onclick="switchSumTab('week',this)">周总结</button>
+      <button class="stab" onclick="switchSumTab('month',this)">月回顾</button>
+      <button class="stab" onclick="switchSumTab('notes',this)">日记</button>
+    </div>
+    <div class="sec" id="summ-content"></div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <button class="nav-tab on" onclick="goTo('today',this)" id="nav-today">
+      <span class="n-icon">✦</span><span class="n-label">今日</span>
+    </button>
+    <button class="nav-tab" onclick="goTo('plan',this)">
+      <span class="n-icon">◈</span><span class="n-label">计划</span>
+    </button>
+    <button class="nav-tab" onclick="goTo('well',this)">
+      <span class="n-icon">◎</span><span class="n-label">关怀</span>
+    </button>
+    <button class="nav-tab" onclick="goTo('shop',this)">
+      <span class="n-icon">◇</span><span class="n-label">商店</span>
+    </button>
+    <button class="nav-tab" onclick="goTo('stats',this)">
+      <span class="n-icon">◉</span><span class="n-label">轨迹</span>
+    </button>
+  </nav>
+</div>
+
+<!-- ── POPUPS ── -->
+
+<!-- Add task popup -->
+<div class="popup-bg" id="pop-task">
+  <div class="popup">
+    <div class="popup-handle"></div>
+    <div class="popup-title">添加自定义任务</div>
+    <div class="popup-sub">每日必修 · 完成即得积分</div>
+    <input id="nt-name" placeholder="任务名称" style="width:100%;border:1.5px solid var(--line);border-radius:10px;padding:10px 14px;font-size:14px;outline:none;margin-bottom:10px;font-family:'Outfit',sans-serif;transition:.15s" onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--line)'">
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <input id="nt-icon" placeholder="图标 🎯" style="width:64px;border:1.5px solid var(--line);border-radius:10px;padding:10px;font-size:14px;outline:none;text-align:center;font-family:'Outfit',sans-serif">
+      <input id="nt-pts" type="number" placeholder="积分值" style="flex:1;border:1.5px solid var(--line);border-radius:10px;padding:10px 14px;font-size:14px;outline:none;font-family:'Outfit',sans-serif">
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-outline" style="flex:1" onclick="closePopup('pop-task')">取消</button>
+      <button class="btn btn-dark" style="flex:1" onclick="addCustomTask()">添加</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add wellbeing popup -->
+<div class="popup-bg" id="pop-wb">
+  <div class="popup">
+    <div class="popup-handle"></div>
+    <div class="popup-title">自定义关怀任务</div>
+    <div class="popup-sub">身心关怀 · 照顾好自己</div>
+    <input id="nw-name" placeholder="任务名称" style="width:100%;border:1.5px solid var(--line);border-radius:10px;padding:10px 14px;font-size:14px;outline:none;margin-bottom:10px;font-family:'Outfit',sans-serif">
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <input id="nw-icon" placeholder="🌟" style="width:64px;border:1.5px solid var(--line);border-radius:10px;padding:10px;font-size:14px;outline:none;text-align:center;font-family:'Outfit',sans-serif">
+      <input id="nw-pts" type="number" placeholder="积分值" style="flex:1;border:1.5px solid var(--line);border-radius:10px;padding:10px 14px;font-size:14px;outline:none;font-family:'Outfit',sans-serif">
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-outline" style="flex:1" onclick="closePopup('pop-wb')">取消</button>
+      <button class="btn btn-dark" style="flex:1" onclick="addCustomWb()">添加</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add reward popup -->
+<div class="popup-bg" id="pop-reward">
+  <div class="popup">
+    <div class="popup-handle"></div>
+    <div class="popup-title">自定义奖励</div>
+    <div class="popup-sub">设定你想要的奖励</div>
+    <input id="nr-name" placeholder="奖励名称" style="width:100%;border:1.5px solid var(--line);border-radius:10px;padding:10px 14px;font-size:14px;outline:none;margin-bottom:10px;font-family:'Outfit',sans-serif">
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <input id="nr-emoji" placeholder="🎁" style="width:64px;border:1.5px solid var(--line);border-radius:10px;padding:10px;font-size:14px;outline:none;text-align:center;font-family:'Outfit',sans-serif">
+      <input id="nr-pts" type="number" placeholder="所需积分" style="flex:1;border:1.5px solid var(--line);border-radius:10px;padding:10px 14px;font-size:14px;outline:none;font-family:'Outfit',sans-serif">
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-outline" style="flex:1" onclick="closePopup('pop-reward')">取消</button>
+      <button class="btn btn-dark" style="flex:1" onclick="addCustomReward()">添加</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm redeem popup -->
+<div class="confirm-popup" id="pop-confirm">
+  <div class="confirm-box">
+    <div class="confirm-em" id="conf-em">🎁</div>
+    <div class="confirm-title" id="conf-title">确认兑换</div>
+    <div class="confirm-desc" id="conf-desc">确认消费 0 积分？</div>
+    <div class="confirm-btns">
+      <button class="btn btn-outline" onclick="closePopup('pop-confirm')">取消</button>
+      <button class="btn btn-dark" id="conf-ok">确认兑换</button>
+    </div>
+  </div>
+</div>
+
+<!-- Points ledger popup -->
+<div class="popup-bg" id="pop-ledger">
+  <div class="popup" style="max-height:85vh;overflow-y:auto">
+    <div class="popup-handle"></div>
+    <div class="popup-title">积分明细</div>
+    <div class="popup-sub">你的每一分都有来处</div>
+    <div id="full-ledger"></div>
+  </div>
+</div>
+
+<!-- Achievement flash -->
+<div class="ach-flash" id="ach">
+  <div class="ach-em" id="ach-em">✨</div>
+  <div class="ach-title" id="ach-title"></div>
+  <div class="ach-sub" id="ach-sub"></div>
+  <div class="ach-pts" id="ach-pts"></div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════
+const DEADLINE = new Date('2025-07-01T00:00:00');
+const DAY_ZH = ['日','一','二','三','四','五','六'];
+const DAY_EN = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const QUOTES = [
+  '每一笔草稿都是通往梦想的一步',
+  '你现在的努力，是在和未来的自己交换',
+  '不是每天都有灵感，但每天都可以练习',
+  '坚持本身就是一种才华',
+  '法语和画笔，都是你飞翔的翅膀',
+  '把每一天过得像最后的机会一样认真',
+  '美院的门向努力的人敞开',
+  '给自己一点温柔，再给梦想一点坚持',
+  '创作是孤独的，但梦想让它值得',
+  '今天的你，比昨天更强',
+];
+
+const DAILY_TASKS = [
+  {id:'sleep', name:'11点前睡觉', icon:'🌙', meta:'严格执行，今日有效', pts:8},
+  {id:'vocab', name:'背至少20个法语单词', icon:'📖', meta:'语言积累，每天坚持', pts:6},
+  {id:'grammar', name:'学至少1个语法知识点', icon:'✏️', meta:'法语精进，系统学习', pts:5},
+  {id:'reading', name:'读至少20分钟法语书', icon:'📚', meta:'沉浸阅读，培养语感', pts:6},
+  {id:'speaking', name:'录一个法语自言自语视频', icon:'🎙', meta:'口语输出，需要勇气', pts:8},
+];
+const BONUS_TASKS = [
+  {id:'b_vocab', name:'额外背单词', sub:'每多10个', pts:2, max:3},
+  {id:'b_read', name:'额外阅读', sub:'每多15分钟', pts:2, max:2},
+  {id:'b_gram', name:'额外语法', sub:'每多1个知识点', pts:3, max:2},
+];
+const PLAN_GROUPS = [
+  {id:'art', label:'🎨 艺术创作', tasks:[
+    {id:'sketch', name:'完成构图草稿', meta:'创作第一步', pts:5},
+    {id:'lineart', name:'完成线稿', meta:'精细刻画', pts:8},
+    {id:'color', name:'完成上色/完稿', meta:'全幅完整作品', pts:12},
+    {id:'fullwork', name:'本周完成一幅完整画作', meta:'全程坚持奖励', pts:25},
+  ]},
+  {id:'french', label:'🇫🇷 法语精进', tasks:[
+    {id:'fw', name:'本周每天坚持法语学习', meta:'7天不间断', pts:20},
+    {id:'ftest', name:'本周单词复习测试', meta:'检验成果', pts:10},
+  ]},
+  {id:'exam', label:'🏛 备考冲刺', tasks:[
+    {id:'portfolio', name:'更新作品集一页', meta:'备考材料', pts:15},
+    {id:'research', name:'研究目标院校信息', meta:'知己知彼', pts:10},
+    {id:'mock', name:'完成一次模拟创作练习', meta:'实战演练', pts:20},
+  ]},
+];
+const WB_TASKS = [
+  {id:'movie', icon:'🎬', name:'看一部电影', pts:12},
+  {id:'exercise', icon:'🏃', name:'运动30分钟', pts:10},
+  {id:'walk', icon:'🌿', name:'户外散步', pts:6},
+  {id:'music', icon:'🎵', name:'听音乐放松', pts:4},
+  {id:'cook', icon:'🍳', name:'亲手做一顿饭', pts:8},
+  {id:'journal', icon:'📓', name:'写手账', pts:6},
+  {id:'friend', icon:'💬', name:'和朋友聊聊天', pts:5},
+  {id:'stretch', icon:'🧘', name:'拉伸/瑜伽', pts:7},
+  {id:'nap', icon:'😴', name:'午休充电', pts:4},
+  {id:'exhibit', icon:'🖼', name:'参观展览/博物馆', pts:15},
+  {id:'readfun', icon:'📕', name:'读喜欢的书', pts:8},
+  {id:'plein', icon:'🌸', name:'写生/观察自然', pts:10},
+];
+const SHOP_ITEMS = [
+  {id:'tea',emoji:'🧋',name:'一杯奶茶',pts:80},
+  {id:'coffee',emoji:'☕',name:'一杯咖啡',pts:60},
+  {id:'book',emoji:'📚',name:'一本书',pts:150},
+  {id:'movie',emoji:'🎬',name:'电影票',pts:100},
+  {id:'statio',emoji:'✏️',name:'文具套装',pts:200},
+  {id:'art',emoji:'🎨',name:'画材补充',pts:220},
+  {id:'snack',emoji:'🍡',name:'零食大礼包',pts:90},
+  {id:'cloth',emoji:'👗',name:'一件衣服',pts:450},
+  {id:'skin',emoji:'✨',name:'护肤小物',pts:180},
+  {id:'concert',emoji:'🎵',name:'演出/音乐会票',pts:300},
+  {id:'trip',emoji:'🚂',name:'周末小旅行',pts:600},
+  {id:'custom',emoji:'🌟',name:'大额自定义奖励',pts:800},
+];
+
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+let S = JSON.parse(localStorage.getItem('dl2') || 'null') || {
+  pts:0, earned:0, spent:0, tasksDone:0,
+  daily:{},    // date -> {tasks:{id:bool}, bonuses:{id:n}, note:'', mood:0, moodNote:'', pts:0}
+  weekTasks:{},// id -> bool (resets each week)
+  weekKey:null,
+  customDaily:[],
+  customWb:[],
+  customRewards:[],
+  weeklySummaries:[],
+  monthlySummaries:[],
+  ledger:[],   // [{type,icon,name,pts,date}]
+  streakWeekKey:null, // for full-week bonus
+};
+
+const save = () => {
+  localStorage.setItem('dl2', JSON.stringify(S));
+  document.getElementById('pts-display').textContent = S.pts;
+};
+
+// Date helpers
+const fmt = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const todayFmt = () => fmt(new Date());
+const weekStart = () => {
+  const t = new Date(); const d = t.getDay();
+  const m = new Date(t); m.setDate(t.getDate()-(d===0?6:d-1));
+  return fmt(m);
+};
+const weekDates = () => {
+  const dates=[]; const ws = new Date(weekStart());
+  for(let i=0;i<7;i++){const d=new Date(ws);d.setDate(ws.getDate()+i);dates.push(d);}
+  return dates;
+};
+const todayData = () => {
+  const k=todayFmt();
+  if(!S.daily[k]) S.daily[k]={tasks:{},bonuses:{},note:'',mood:0,moodNote:'',pts:0};
+  return S.daily[k];
+};
+
+// Points
+function earnPts(amount, icon, name) {
+  S.pts += amount; S.earned += amount;
+  const d = todayData(); d.pts = (d.pts||0) + amount;
+  addLedger('earn', icon, name, amount);
+  save();
+  refreshPtsUI();
+}
+function spendPts(amount, icon, name) {
+  S.pts -= amount; S.spent += amount;
+  addLedger('spend', icon, name, -amount);
+  save();
+  refreshPtsUI();
+}
+function addLedger(type, icon, name, pts) {
+  const now = new Date();
+  S.ledger.unshift({type, icon, name, pts,
+    date: now.toLocaleDateString('zh-CN') + ' ' + now.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})
+  });
+  if(S.ledger.length>200) S.ledger=S.ledger.slice(0,200);
+}
+function refreshPtsUI(){
+  document.getElementById('pts-display').textContent = S.pts;
+  document.getElementById('shop-pts').textContent = S.pts;
+  document.getElementById('shop-earned').textContent = S.earned;
+  document.getElementById('shop-spent').textContent = S.spent;
+}
+
+// ═══════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════
+const PAGE_META = {
+  today:{title:'今日修炼',sub:()=>{const t=new Date();return `${t.getFullYear()}年${t.getMonth()+1}月${t.getDate()}日 · 星期${DAY_ZH[t.getDay()]}`}},
+  plan:{title:'本周计划',sub:()=>'Week at a Glance'},
+  well:{title:'身心关怀',sub:()=>'Wellbeing · 照顾好自己'},
+  shop:{title:'积分商店',sub:()=>'Rewards · 用努力换回报'},
+  stats:{title:'数据轨迹',sub:()=>'Progress · 见证每一天'},
+};
+let curPage='today';
+
+function goTo(page, tab) {
+  if(curPage===page) return;
+  curPage=page;
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('on'));
+  document.getElementById('s-'+page).classList.add('on');
+  if(tab) tab.classList.add('on');
+  const meta=PAGE_META[page];
+  document.getElementById('top-title').textContent=meta.title;
+  document.getElementById('top-sub').textContent=meta.sub();
+  // scroll to top
+  document.getElementById('s-'+page).scrollTop=0;
+  render(page);
+}
+
+function render(page) {
+  if(page==='today') renderToday();
+  if(page==='plan') renderPlan();
+  if(page==='well') renderWell();
+  if(page==='shop') renderShop();
+  if(page==='stats') renderStats();
+}
+
+// ═══════════════════════════════════════════════
+// COUNTDOWN
+// ═══════════════════════════════════════════════
+function tick() {
+  const diff = DEADLINE - Date.now();
+  if(diff<=0){['cd-d','cd-h','cd-m','cd-s'].forEach(id=>document.getElementById(id).textContent='00');return;}
+  document.getElementById('cd-d').textContent=String(Math.floor(diff/86400000)).padStart(2,'0');
+  document.getElementById('cd-h').textContent=String(Math.floor((diff%86400000)/3600000)).padStart(2,'0');
+  document.getElementById('cd-m').textContent=String(Math.floor((diff%3600000)/60000)).padStart(2,'0');
+  document.getElementById('cd-s').textContent=String(Math.floor((diff%60000)/1000)).padStart(2,'0');
+}
+
+// ═══════════════════════════════════════════════
+// TODAY
+// ═══════════════════════════════════════════════
+function renderToday() {
+  // Quote
+  const qi = new Date().getDate() % QUOTES.length;
+  document.getElementById('daily-quote').textContent = '"'+QUOTES[qi]+'"';
+
+  // Subtitle date
+  const t=new Date();
+  document.getElementById('top-sub').textContent=`${t.getFullYear()}年${t.getMonth()+1}月${t.getDate()}日 · 星期${DAY_ZH[t.getDay()]}`;
+
+  renderStreak();
+  renderDailyList();
+  renderBonusList();
+
+  const dd=todayData();
+  document.getElementById('today-note').value=dd.note||'';
+}
+
+function renderStreak() {
+  const dates=weekDates();
+  const row=document.getElementById('streak-row');
+  row.innerHTML='';
+  let done=0;
+  dates.forEach(d=>{
+    const k=fmt(d);
+    const isToday=k===todayFmt();
+    const dd=S.daily[k];
+    const has=dd&&Object.values(dd.tasks||{}).some(Boolean);
+    if(has) done++;
+    const el=document.createElement('div');
+    el.className='s-dot'+(has?' done':'')+(isToday&&!has?' today':'');
+    el.innerHTML=`<span class="sd">${DAY_EN[d.getDay()].toUpperCase()}</span><span class="sn">${d.getDate()}</span>`;
+    row.appendChild(el);
+  });
+  document.getElementById('streak-bar').style.width=(done/7*100)+'%';
+  document.getElementById('streak-label').textContent=`${done}/7天`;
+  // Full-week bonus
+  const wk=weekStart();
+  if(done===7&&S.streakWeekKey!==wk){
+    S.streakWeekKey=wk;
+    earnPts(30,'🏆','本周全勤奖励');
+    showAch('🏆','本周全勤！','7天不间断打卡',30);
+  }
+}
+
+function renderDailyList() {
+  const dd=todayData();
+  const all=[...DAILY_TASKS,...S.customDaily];
+  const el=document.getElementById('daily-list');
+  el.innerHTML='';
+  all.forEach(task=>{
+    const done=!!dd.tasks[task.id];
+    const div=document.createElement('div');
+    div.className='task-card'+(done?' done':'');
+    div.onclick=()=>toggleDaily(task);
+    div.innerHTML=`<div class="t-check">✓</div><div class="t-body"><div class="t-name">${task.icon||'○'} ${task.name}</div><div class="t-meta">${task.meta||''}</div></div><div class="t-pts">${done?'✓':'+'}${task.pts}</div>`;
+    el.appendChild(div);
+  });
+  // Check all done
+  checkAllDone(dd, all);
+}
+
+function toggleDaily(task) {
+  const dd=todayData();
+  const was=!!dd.tasks[task.id];
+  dd.tasks[task.id]=!was;
+  if(!was){
+    earnPts(task.pts, task.icon||'✦', task.name);
+    S.tasksDone++;
+    showAch(task.icon||'✦','任务完成！',task.name,task.pts);
+  } else {
+    // undo
+    S.pts-=task.pts; S.earned-=task.pts; dd.pts=(dd.pts||0)-task.pts;
+    S.ledger.unshift({type:'undo',icon:'↩',name:'撤销：'+task.name,pts:-task.pts,
+      date:new Date().toLocaleDateString('zh-CN')});
+    if(S.pts<0)S.pts=0;
+    save();
+    refreshPtsUI();
+  }
+  checkAllDone(dd,[...DAILY_TASKS,...S.customDaily]);
+  save();
+  renderDailyList();
+  renderStreak();
+}
+
+function checkAllDone(dd, all) {
+  const total=all.length;
+  const done=Object.entries(dd.tasks).filter(([k,v])=>v&&all.find(t=>t.id===k)).length;
+  if(done===total&&total>0&&!dd.fullBonus){
+    dd.fullBonus=true;
+    earnPts(15,'🎉','今日全勤奖励');
+    toast('🎉 今日全部完成！额外 +15分！');
+    save();
+  }
+}
+
+function renderBonusList() {
+  const dd=todayData();
+  const el=document.getElementById('bonus-list');
+  el.innerHTML='';
+  BONUS_TASKS.forEach(b=>{
+    const val=dd.bonuses[b.id]||0;
+    const div=document.createElement('div');
+    div.className='bonus-card';
+    div.innerHTML=`
+      <div class="bonus-info"><div class="bonus-name">${b.name}</div><div class="bonus-sub">${b.sub} · 上限${b.max*b.pts}分</div></div>
+      <div class="stepper">
+        <button class="s-btn" onclick="chgBonus('${b.id}',${b.pts},${b.max},-1)">−</button>
+        <span class="s-val">${val}</span>
+        <button class="s-btn" onclick="chgBonus('${b.id}',${b.pts},${b.max},1)">+</button>
+      </div>
+      <div class="bonus-earned">${val>0?'+'+val*b.pts:'0'}</div>`;
+    el.appendChild(div);
+  });
+}
+
+function chgBonus(id, pts, max, delta) {
+  const dd=todayData();
+  const cur=dd.bonuses[id]||0;
+  const nv=Math.max(0,Math.min(max,cur+delta));
+  const diff=nv-cur;
+  dd.bonuses[id]=nv;
+  if(diff>0){earnPts(pts*diff,'⚡','超额挑战'); toast(`⚡ +${pts*diff}分`);}
+  else if(diff<0){S.pts+=pts*diff;S.earned+=pts*diff;dd.pts=(dd.pts||0)+pts*diff;if(S.pts<0)S.pts=0;S.ledger.unshift({type:'undo',icon:'↩',name:'调整超额',pts:pts*diff,date:new Date().toLocaleDateString('zh-CN')});save();refreshPtsUI();}
+  save();
+  renderBonusList();
+}
+
+function saveTodayNote(showMsg) {
+  const dd=todayData();
+  dd.note=document.getElementById('today-note').value;
+  save();
+  if(showMsg) toast('💾 已保存');
+}
+
+// ═══════════════════════════════════════════════
+// PLAN
+// ═══════════════════════════════════════════════
+let activePlanTab = 'art';
+
+function renderPlan() {
+  // Reset week tasks if new week
+  const wk=weekStart();
+  if(S.weekKey!==wk){S.weekKey=wk;S.weekTasks={};save();}
+
+  // Week bar
+  const dates=weekDates();
+  const bar=document.getElementById('week-bar');
+  bar.innerHTML='';
+  dates.forEach(d=>{
+    const k=fmt(d);
+    const isToday=k===todayFmt();
+    const dd=S.daily[k];
+    const has=dd&&Object.values(dd.tasks||{}).some(Boolean);
+    const div=document.createElement('div');
+    div.className='wday'+(isToday?' today':has?' has':'');
+    div.innerHTML=`<div class="wd">${DAY_EN[d.getDay()].toUpperCase()}</div><div class="wn">${d.getDate()}</div><div class="wdot"></div>`;
+    bar.appendChild(div);
+  });
+
+  // Tabs
+  const tabsEl=document.getElementById('plan-tabs');
+  tabsEl.innerHTML='';
+  PLAN_GROUPS.forEach(g=>{
+    const btn=document.createElement('button');
+    btn.className='wtab'+(activePlanTab===g.id?' on':'');
+    btn.textContent=g.label;
+    btn.onclick=()=>{activePlanTab=g.id;renderPlan();};
+    tabsEl.appendChild(btn);
+  });
+  // Custom add button
+  const addBtn=document.createElement('button');
+  addBtn.className='wtab';
+  addBtn.textContent='+ 添加';
+  addBtn.onclick=()=>openAddPlanTask();
+  tabsEl.appendChild(addBtn);
+
+  // Tab content
+  const cont=document.getElementById('plan-tab-contents');
+  cont.innerHTML='';
+  const group=PLAN_GROUPS.find(g=>g.id===activePlanTab);
+  if(group){
+    group.tasks.forEach(task=>{
+      const done=!!S.weekTasks[task.id];
+      const div=document.createElement('div');
+      div.className='task-card'+(done?' done':'');
+      div.onclick=()=>toggleWeekTask(task);
+      div.innerHTML=`<div class="t-check">✓</div><div class="t-body"><div class="t-name">${task.name}</div><div class="t-meta">${task.meta}</div></div><div class="t-pts">${done?'✓':'+'}${task.pts}</div>`;
+      cont.appendChild(div);
+    });
+  }
+
+  // Weekly summary
+  const wkKey=weekStart();
+  const ws=S.weeklySummaries.find(s=>s.k===wkKey)||{};
+  document.getElementById('w-highlight').value=ws.highlight||'';
+  document.getElementById('w-reflect').value=ws.reflect||'';
+  document.getElementById('w-next').value=ws.next||'';
+  document.getElementById('w-save-time').textContent=ws.savedAt?`已保存 ${ws.savedAt}`:'未保存';
+}
+
+function toggleWeekTask(task) {
+  const was=!!S.weekTasks[task.id];
+  S.weekTasks[task.id]=!was;
+  if(!was){earnPts(task.pts,'📋',task.name);showAch('📋','周任务完成！',task.name,task.pts);}
+  else{S.pts-=task.pts;S.earned-=task.pts;if(S.pts<0)S.pts=0;S.ledger.unshift({type:'undo',icon:'↩',name:'撤销：'+task.name,pts:-task.pts,date:new Date().toLocaleDateString('zh-CN')});save();refreshPtsUI();}
+  save();renderPlan();
+}
+
+function saveWeekly() {
+  const wk=weekStart();
+  let ws=S.weeklySummaries.find(s=>s.k===wk);
+  if(!ws){ws={k:wk};S.weeklySummaries.push(ws);}
+  ws.highlight=document.getElementById('w-highlight').value;
+  ws.reflect=document.getElementById('w-reflect').value;
+  ws.next=document.getElementById('w-next').value;
+  ws.savedAt=new Date().toLocaleDateString('zh-CN');
+  save();
+  document.getElementById('w-save-time').textContent=`已保存 ${ws.savedAt}`;
+}
+function archiveWeekly() {
+  saveWeekly();
+  const wk=weekStart();
+  const ws=S.weeklySummaries.find(s=>s.k===wk);
+  if(ws){ws.archived=true;save();toast('📋 本周总结已归档！');}
+}
+
+let planAddGroup='art';
+function openAddPlanTask() {
+  // reuse task popup with context
+  document.getElementById('nt-name').placeholder='周任务名称...';
+  openPopup('pop-task');
+  document.getElementById('nt-name').dataset.ctx='plan';
+}
+
+// ═══════════════════════════════════════════════
+// WELLBEING
+// ═══════════════════════════════════════════════
+function renderWell() {
+  const dd=todayData();
+  const all=[...WB_TASKS,...S.customWb];
+  const grid=document.getElementById('wb-grid');
+  grid.innerHTML='';
+  all.forEach(task=>{
+    const done=!!dd.tasks['wb_'+task.id];
+    const div=document.createElement('div');
+    div.className='wb-item'+(done?' done':'');
+    div.onclick=()=>toggleWb(task);
+    div.innerHTML=`<div class="wb-em">${task.icon}</div><div class="wb-n">${task.name}</div><div class="wb-p">${done?'✓ 已完成':'+'+task.pts+'分'}</div>`;
+    grid.appendChild(div);
+  });
+
+  // Mood
+  const mood=dd.mood||0;
+  document.querySelectorAll('.mood-opt').forEach(o=>{
+    o.classList.toggle('sel',parseInt(o.dataset.m)===mood);
+  });
+  document.getElementById('mood-note').value=dd.moodNote||'';
+
+  // Monthly
+  const mk=getMonthKey();
+  const ms=S.monthlySummaries.find(s=>s.k===mk)||{};
+  document.getElementById('m-gain').value=ms.gain||'';
+  document.getElementById('m-letter').value=ms.letter||'';
+  document.getElementById('m-save-time').textContent=ms.savedAt?`已保存 ${ms.savedAt}`:'未保存';
+}
+
+function toggleWb(task) {
+  const dd=todayData();
+  const key='wb_'+task.id;
+  const was=!!dd.tasks[key];
+  dd.tasks[key]=!was;
+  if(!was){earnPts(task.pts,task.icon,task.name);toast(`${task.icon} ${task.name} +${task.pts}分`);}
+  else{S.pts-=task.pts;S.earned-=task.pts;dd.pts=(dd.pts||0)-task.pts;if(S.pts<0)S.pts=0;S.ledger.unshift({type:'undo',icon:'↩',name:'撤销：'+task.name,pts:-task.pts,date:new Date().toLocaleDateString('zh-CN')});save();refreshPtsUI();}
+  save();renderWell();
+}
+
+function setMood(val) {
+  const dd=todayData();
+  dd.mood=val;
+  save();renderWell();
+  toast(['','😔 抱抱你，今天辛苦了','😕 没关系，明天更好','😐 普通的一天也是好的','🙂 不错！继续加油','😄 今天超棒！'][val]);
+}
+function saveMoodNote(){const dd=todayData();dd.moodNote=document.getElementById('mood-note').value;save();}
+
+const getMonthKey=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`};
+function saveMonthly(){
+  const mk=getMonthKey();
+  let ms=S.monthlySummaries.find(s=>s.k===mk);
+  if(!ms){ms={k:mk};S.monthlySummaries.push(ms);}
+  ms.gain=document.getElementById('m-gain').value;
+  ms.letter=document.getElementById('m-letter').value;
+  ms.savedAt=new Date().toLocaleDateString('zh-CN');
+  save();
+  document.getElementById('m-save-time').textContent=`已保存 ${ms.savedAt}`;
+}
+function archiveMonthly(){saveMonthly();const mk=getMonthKey();const ms=S.monthlySummaries.find(s=>s.k===mk);if(ms){ms.archived=true;save();toast('📆 月度回顾已归档！');}}
+
+// ═══════════════════════════════════════════════
+// SHOP
+// ═══════════════════════════════════════════════
+function renderShop() {
+  refreshPtsUI();
+  const all=[...SHOP_ITEMS,...S.customRewards];
+  const grid=document.getElementById('shop-grid');
+  grid.innerHTML='';
+  all.forEach(item=>{
+    const can=S.pts>=item.pts;
+    const div=document.createElement('div');
+    div.className='shop-item'+(can?' afford':'');
+    div.onclick=()=>confirmRedeem(item);
+    div.innerHTML=`${can?'<div class="afford-tag">可兑换</div>':''}<div class="sh-em">${item.emoji}</div><div class="sh-name">${item.name}</div><div class="sh-cost${can?'':' no'}">${item.pts} 分</div>`;
+    grid.appendChild(div);
+  });
+  renderLedger();
+}
+
+function confirmRedeem(item) {
+  if(S.pts<item.pts){toast('❌ 积分不足，继续加油！');return;}
+  document.getElementById('conf-em').textContent=item.emoji;
+  document.getElementById('conf-title').textContent=item.name;
+  document.getElementById('conf-desc').textContent=`消费 ${item.pts} 积分，剩余 ${S.pts-item.pts} 分`;
+  document.getElementById('conf-ok').onclick=()=>{doRedeem(item);closePopup('pop-confirm');};
+  openPopup('pop-confirm');
+}
+function doRedeem(item) {
+  spendPts(item.pts, item.emoji, item.name);
+  save();
+  renderShop();
+  toast(`🎁 成功兑换「${item.name}」！好好享受～`);
+  showAch(item.emoji,'奖励已兑换！',item.name,-item.pts);
+}
+
+function renderLedger() {
+  const el=document.getElementById('ledger-list');
+  const recent=S.ledger.slice(0,15);
+  if(!recent.length){el.innerHTML='<div class="empty">暂无记录<br>完成任务和兑换奖励后这里会出现明细</div>';return;}
+  el.innerHTML=recent.map(l=>`
+    <div class="ledger-item">
+      <div class="ledger-icon">${l.icon||'●'}</div>
+      <div>
+        <div class="ledger-name">${l.name}</div>
+        <div class="ledger-time">${l.date}</div>
+      </div>
+      <div class="ledger-amt ${l.pts>0?'earn':'spend'}">${l.pts>0?'+':''}${l.pts}</div>
+    </div>`).join('');
+}
+
+function showPtsLedger() {
+  const el=document.getElementById('full-ledger');
+  if(!S.ledger.length){el.innerHTML='<div class="empty">暂无记录</div>';openPopup('pop-ledger');return;}
+  el.innerHTML=S.ledger.map(l=>`
+    <div class="ledger-item">
+      <div class="ledger-icon">${l.icon||'●'}</div>
+      <div style="flex:1"><div class="ledger-name">${l.name}</div><div class="ledger-time">${l.date}</div></div>
+      <div class="ledger-amt ${l.pts>0?'earn':'spend'}">${l.pts>0?'+':''}${l.pts}</div>
+    </div>`).join('');
+  openPopup('pop-ledger');
+}
+
+// ═══════════════════════════════════════════════
+// STATS
+// ═══════════════════════════════════════════════
+let sumTab='week';
+
+function renderStats() {
+  // Stat boxes
+  const streak=calcStreak();
+  const daysLeft=Math.max(0,Math.ceil((DEADLINE-Date.now())/86400000));
+  const el=document.getElementById('stat-row');
+  el.innerHTML=`
+    <div class="stat-box"><div class="stat-n">${streak}</div><div class="stat-l">连续打卡天</div></div>
+    <div class="stat-box"><div class="stat-n">${S.tasksDone}</div><div class="stat-l">完成任务</div></div>
+    <div class="stat-box"><div class="stat-n">${daysLeft}</div><div class="stat-l">距截止天数</div></div>`;
+
+  // Pts chart (14 days)
+  const chart=document.getElementById('pts-chart');
+  chart.innerHTML='';
+  const vals=[];
+  for(let i=13;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const k=fmt(d);vals.push({d,k,pts:(S.daily[k]||{}).pts||0});}
+  const mx=Math.max(...vals.map(v=>v.pts),1);
+  vals.forEach(({d,k,pts})=>{
+    const today=k===todayFmt();
+    const wrap=document.createElement('div');
+    wrap.className='bar-wrap';
+    wrap.innerHTML=`<div class="bar${today?' today':''}" style="height:${Math.max(3,pts/mx*58)}px" title="${pts}分"></div><div class="bar-lbl">${d.getDate()}</div>`;
+    chart.appendChild(wrap);
+  });
+
+  // Cal
+  const cal=document.getElementById('full-cal');
+  cal.innerHTML='';
+  const start=new Date('2025-05-05');
+  const today=new Date();
+  const days=Math.ceil((today-start)/86400000)+1;
+  for(let i=0;i<Math.min(days,63);i++){
+    const d=new Date(start);d.setDate(start.getDate()+i);
+    const k=fmt(d);const isToday=k===todayFmt();
+    const dd=S.daily[k];const has=dd&&Object.values(dd.tasks||{}).some(Boolean);
+    const cell=document.createElement('div');
+    cell.className='cal-cell'+(has?' has':'')+(isToday?' now':'');
+    cell.innerHTML=`<span class="cd">${d.getDate()}</span>`;
+    cell.title=`${k}${has?' ✓':''}`;
+    cal.appendChild(cell);
+  }
+
+  renderSumContent();
+}
+
+function calcStreak() {
+  let s=0;const t=new Date();
+  for(let i=0;i<365;i++){const d=new Date(t);d.setDate(t.getDate()-i);const k=fmt(d);const dd=S.daily[k];if(dd&&Object.values(dd.tasks||{}).some(Boolean))s++;else if(i>0)break;}
+  return s;
+}
+
+function switchSumTab(tab, btn) {
+  sumTab=tab;
+  document.querySelectorAll('.stab').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  renderSumContent();
+}
+
+function renderSumContent() {
+  const el=document.getElementById('summ-content');
+  if(sumTab==='week'){
+    const sorted=[...S.weeklySummaries].sort((a,b)=>b.k.localeCompare(a.k));
+    if(!sorted.length){el.innerHTML='<div class="empty">在「计划」页填写周总结后，这里会留存记录 ✨</div>';return;}
+    el.innerHTML=sorted.map(ws=>`<div class="arch-card">
+      <div class="arch-head"><div class="arch-key">📋 ${ws.k} 起</div><span class="arch-tag${ws.archived?' arc':''}">${ws.archived?'已归档':'草稿'}</span></div>
+      ${ws.highlight?`<div class="arch-label">亮点</div><div class="arch-body">${ws.highlight}</div>`:''}
+      ${ws.reflect?`<div class="arch-label">感悟</div><div class="arch-body">${ws.reflect}</div>`:''}
+      ${ws.next?`<div class="arch-label">下周</div><div class="arch-body">${ws.next}</div>`:''}
+      <div style="font-size:11px;color:var(--ink3);margin-top:10px">保存于 ${ws.savedAt||'--'}</div>
+    </div>`).join('');
+  }
+  if(sumTab==='month'){
+    const sorted=[...S.monthlySummaries].sort((a,b)=>b.k.localeCompare(a.k));
+    if(!sorted.length){el.innerHTML='<div class="empty">在「关怀」页填写月回顾，这里会留存记录 🌱</div>';return;}
+    el.innerHTML=sorted.map(ms=>`<div class="arch-card">
+      <div class="arch-head"><div class="arch-key">📆 ${ms.k}</div><span class="arch-tag${ms.archived?' arc':''}">${ms.archived?'已归档':'草稿'}</span></div>
+      ${ms.gain?`<div class="arch-label">最大收获</div><div class="arch-body">${ms.gain}</div>`:''}
+      ${ms.letter?`<div class="arch-label">给未来的自己</div><div class="arch-body" style="font-style:italic">${ms.letter}</div>`:''}
+      <div style="font-size:11px;color:var(--ink3);margin-top:10px">保存于 ${ms.savedAt||'--'}</div>
+    </div>`).join('');
+  }
+  if(sumTab==='notes'){
+    const notes=Object.entries(S.daily).filter(([k,v])=>v.note).sort((a,b)=>b[0].localeCompare(a[0])).slice(0,25);
+    if(!notes.length){el.innerHTML='<div class="empty">在「今日」页写下的备忘，都会保存在这里 💭</div>';return;}
+    el.innerHTML='<div class="wcard">'+notes.map(([k,v])=>{const d=new Date(k);return`<div class="note-day"><div class="note-day-head"><div class="note-date">${k} 星期${DAY_ZH[d.getDay()]}</div>${v.mood?`<span class="note-mood">${['','😔','😕','😐','🙂','😄'][v.mood]}</span>`:''}</div><div class="note-body">${v.note}</div></div>`;}).join('')+'</div>';
+  }
+}
+
+// ═══════════════════════════════════════════════
+// CUSTOM ADD
+// ═══════════════════════════════════════════════
+function addCustomTask() {
+  const name=document.getElementById('nt-name').value.trim();
+  const icon=document.getElementById('nt-icon').value.trim()||'⭐';
+  const pts=parseInt(document.getElementById('nt-pts').value)||5;
+  if(!name){toast('请输入任务名称');return;}
+  const ctx=document.getElementById('nt-name').dataset.ctx;
+  if(ctx==='plan'){
+    const group=PLAN_GROUPS.find(g=>g.id===activePlanTab);
+    if(group)group.tasks.push({id:'pc_'+Date.now(),name,meta:'自定义',pts});
+  } else {
+    S.customDaily.push({id:'cd_'+Date.now(),name,icon,meta:'自定义任务',pts});
+  }
+  document.getElementById('nt-name').value='';document.getElementById('nt-icon').value='';document.getElementById('nt-pts').value='';
+  save();closePopup('pop-task');
+  renderToday();toast('✅ 任务已添加');
+}
+
+function addCustomWb() {
+  const name=document.getElementById('nw-name').value.trim();
+  const icon=document.getElementById('nw-icon').value.trim()||'🌟';
+  const pts=parseInt(document.getElementById('nw-pts').value)||5;
+  if(!name){toast('请输入名称');return;}
+  S.customWb.push({id:'cw_'+Date.now(),name,icon,pts});
+  document.getElementById('nw-name').value='';document.getElementById('nw-icon').value='';document.getElementById('nw-pts').value='';
+  save();closePopup('pop-wb');renderWell();toast('🌿 已添加');
+}
+
+function addCustomReward() {
+  const name=document.getElementById('nr-name').value.trim();
+  const emoji=document.getElementById('nr-emoji').value.trim()||'🎁';
+  const pts=parseInt(document.getElementById('nr-pts').value)||100;
+  if(!name){toast('请输入奖励名称');return;}
+  S.customRewards.push({id:'cr_'+Date.now(),emoji,name,pts});
+  document.getElementById('nr-name').value='';document.getElementById('nr-emoji').value='';document.getElementById('nr-pts').value='';
+  save();closePopup('pop-reward');renderShop();toast('🛍 奖励已添加');
+}
+
+// ═══════════════════════════════════════════════
+// POPUPS
+// ═══════════════════════════════════════════════
+function openPopup(id){document.getElementById(id).classList.add('on')}
+function closePopup(id){document.getElementById(id).classList.remove('on')}
+function openAddTask(){document.getElementById('nt-name').dataset.ctx='daily';openPopup('pop-task')}
+function openAddWb(){openPopup('pop-wb')}
+function openAddReward(){openPopup('pop-reward')}
+
+// Close popup on background click
+document.querySelectorAll('.popup-bg').forEach(bg=>{
+  bg.addEventListener('click',e=>{if(e.target===bg)bg.classList.remove('on');});
+});
+
+// ═══════════════════════════════════════════════
+// ACHIEVEMENT + TOAST
+// ═══════════════════════════════════════════════
+let achTimer;
+function showAch(em, title, sub, pts) {
+  document.getElementById('ach-em').textContent=em;
+  document.getElementById('ach-title').textContent=title;
+  document.getElementById('ach-sub').textContent=sub;
+  document.getElementById('ach-pts').textContent=(pts>0?'+':'')+pts+' 分';
+  const el=document.getElementById('ach');
+  el.classList.add('on');
+  clearTimeout(achTimer);
+  achTimer=setTimeout(()=>el.classList.remove('on'),2000);
+}
+document.getElementById('ach').onclick=()=>document.getElementById('ach').classList.remove('on');
+
+function toast(msg) {
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.classList.add('show');
+  clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),2500);
+}
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+function init() {
+  // Reset week tasks if new week
+  const wk=weekStart();
+  if(S.weekKey&&S.weekKey!==wk){S.weekTasks={};S.weekKey=wk;}
+  if(!S.weekKey)S.weekKey=wk;
+
+  refreshPtsUI();
+  document.getElementById('top-sub').textContent=PAGE_META.today.sub();
+  tick();setInterval(tick,1000);
+  renderToday();
+}
+
+init();
+</script>
+</body>
+</html>
