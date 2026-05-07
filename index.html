@@ -1,0 +1,643 @@
+import { useState, useEffect } from “react”;
+import { Check, Plus, Trash2, Edit3, X, Zap, Moon, Sun, RefreshCw, ChevronDown, ChevronUp, Sparkles } from “lucide-react”;
+
+// ── Default data (first-time only, no mock history) ───────────────────────
+const DEFAULT_TASKS = [
+{ id: 1, name: “23:00 前入睡”, basePoints: 10, type: “simple”, completed: false, emoji: “🌙”, actualValue: “” },
+{ id: 2, name: “背法语单词”, basePoints: 10, type: “incremental”, baseTarget: 20, unit: “个”, extraUnit: 10, extraPoints: 3, completed: false, emoji: “📖”, actualValue: “” },
+{ id: 3, name: “学法语语法”, basePoints: 10, type: “incremental”, baseTarget: 1, unit: “个知识点”, extraUnit: 1, extraPoints: 5, completed: false, emoji: “✏️”, actualValue: “” },
+{ id: 4, name: “读法语书”, basePoints: 10, type: “incremental”, baseTarget: 20, unit: “分钟”, extraUnit: 10, extraPoints: 2, completed: false, emoji: “📚”, actualValue: “” },
+{ id: 5, name: “法语自言自语视频”, basePoints: 15, type: “simple”, completed: false, emoji: “🎬”, actualValue: “” },
+];
+const DEFAULT_PROJECTS = [
+{
+id: 1, name: “一周一画”, emoji: “🎨”, expanded: false,
+steps: [
+{ id: 1, name: “构图”, points: 10, completed: false },
+{ id: 2, name: “线稿”, points: 15, completed: false },
+{ id: 3, name: “上色”, points: 25, completed: false },
+],
+},
+];
+const DEFAULT_SHOP = [
+{ id: 1, name: “看一集剧”, price: 20, emoji: “📺” },
+{ id: 2, name: “点一杯奶茶”, price: 35, emoji: “🧋” },
+{ id: 3, name: “买一本喜欢的书”, price: 80, emoji: “📕” },
+{ id: 4, name: “周末半天自由时光”, price: 100, emoji: “✨” },
+];
+const DEFAULT_COUNTDOWN = {
+label: “距离画集投稿还剩”,
+targetDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split(“T”)[0],
+};
+
+// ── localStorage helpers ──────────────────────────────────────────────────
+function load(key, fallback) {
+try { const v = localStorage.getItem(key); return v !== null ? JSON.parse(v) : fallback; }
+catch { return fallback; }
+}
+function save(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch {} }
+
+// ── Points calculator ─────────────────────────────────────────────────────
+function calcPts(task, value) {
+if (task.type === “simple”) return task.basePoints;
+const n = parseFloat(value);
+if (!n || n < task.baseTarget) return task.basePoints;
+return task.basePoints + Math.floor((n - task.baseTarget) / task.extraUnit) * task.extraPoints;
+}
+function getDaysLeft(d) { return Math.ceil((new Date(d) - new Date()) / 86400000); }
+
+// ── UI primitives ─────────────────────────────────────────────────────────
+function Modal({ title, onClose, children }) {
+return (
+<div className=“fixed inset-0 z-50 flex items-center justify-center p-4” style={{ background: “rgba(0,0,0,0.18)” }}>
+<div className=“bg-white rounded-3xl w-full max-w-sm p-6” style={{ boxShadow: “0 8px 48px rgba(0,0,0,0.14)” }}>
+<div className="flex items-center justify-between mb-5">
+<span className="font-semibold text-gray-800">{title}</span>
+<button onClick={onClose} className="p-1.5 rounded-full hover:bg-gray-100 transition-all active:scale-90"><X size={15} className="text-gray-400" /></button>
+</div>
+{children}
+</div>
+</div>
+);
+}
+
+function Btn({ onClick, children, variant = “default”, disabled, full }) {
+const base = `inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-medium rounded-2xl transition-all duration-150 active:scale-95 select-none ${full ? "w-full" : ""}`;
+const map = { default: “bg-gray-100 text-gray-600 hover:bg-gray-200”, primary: “bg-gray-900 text-white hover:bg-gray-700”, blue: “bg-blue-100 text-blue-600 hover:bg-blue-200”, dim: “bg-gray-100 text-gray-300 cursor-not-allowed” };
+return <button onClick={!disabled ? onClick : undefined} className={`${base} ${disabled ? map.dim : map[variant]}`}>{children}</button>;
+}
+
+function Inp({ value, onChange, placeholder, type = “text” }) {
+return <input type={type} value={value} placeholder={placeholder} onChange={e => onChange(e.target.value)} className=“w-full rounded-2xl border border-gray-100 bg-gray-50 px-4 py-2.5 text-sm text-gray-700 placeholder-gray-300 outline-none focus:border-blue-200 focus:bg-white transition-all” />;
+}
+
+function Label({ text }) { return <div className="text-xs text-gray-400 mb-1">{text}</div>; }
+function EmojiInp({ value, onChange }) {
+return <input value={value} onChange={e => onChange(e.target.value)} className=“w-12 flex-shrink-0 rounded-2xl border border-gray-100 bg-gray-50 text-center text-lg outline-none px-1 py-2.5” />;
+}
+
+function CheckRing({ checked, onToggle, lg }) {
+const sz = lg ? “w-7 h-7” : “w-6 h-6”;
+return (
+<button onClick={onToggle} className={`flex-shrink-0 rounded-full border-2 flex items-center justify-center transition-all duration-200 active:scale-75 ${sz} ${checked ? "bg-blue-400 border-blue-400" : "border-gray-200 hover:border-blue-300"}`}>
+{checked && <Check size={lg ? 13 : 11} className=“text-white” strokeWidth={3} />}
+</button>
+);
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// TAB 1 · Daily
+// ══════════════════════════════════════════════════════════════════════════
+function DailyTab({ tasks, setTasks, setTotalPoints, restDay, setRestDay }) {
+const [showAdd, setShowAdd] = useState(false);
+const [editT, setEditT]     = useState(null);
+const blank = { name: “”, basePoints: 10, type: “simple”, baseTarget: 1, unit: “”, extraUnit: 1, extraPoints: 0, emoji: “⭐” };
+const [draft, setDraft]     = useState(blank);
+
+const todayPts = tasks.reduce((s, t) => s + (t.completed ? calcPts(t, t.actualValue) : 0), 0);
+
+function toggle(id) {
+setTasks(prev => prev.map(t => {
+if (t.id !== id) return t;
+const pts = calcPts(t, t.actualValue);
+setTotalPoints(p => Math.max(0, t.completed ? p - pts : p + pts));
+return { …t, completed: !t.completed };
+}));
+}
+
+function updateVal(id, val) {
+setTasks(prev => prev.map(t => {
+if (t.id !== id) return t;
+if (t.completed) {
+const diff = calcPts(t, val) - calcPts(t, t.actualValue);
+setTotalPoints(p => Math.max(0, p + diff));
+}
+return { …t, actualValue: val };
+}));
+}
+
+function del(id) {
+const t = tasks.find(x => x.id === id);
+if (t?.completed) setTotalPoints(p => Math.max(0, p - calcPts(t, t.actualValue)));
+setTasks(prev => prev.filter(x => x.id !== id));
+}
+
+function addTask() {
+if (!draft.name.trim()) return;
+setTasks(prev => […prev, { …draft, id: Date.now(), completed: false, actualValue: “” }]);
+setDraft(blank); setShowAdd(false);
+}
+
+function saveEdit() {
+setTasks(prev => prev.map(t => t.id === editT.id ? { …editT } : t));
+setEditT(null);
+}
+
+function TaskForm({ s, set, onSave, lbl }) {
+return (
+<div className="space-y-3">
+<div className="flex gap-2">
+<EmojiInp value={s.emoji} onChange={v => set(p => ({ …p, emoji: v }))} />
+<Inp value={s.name} onChange={v => set(p => ({ …p, name: v }))} placeholder=“任务名称” />
+</div>
+<div className="flex gap-2">
+<div className="flex-1"><Label text="类型" />
+<select value={s.type} onChange={e => set(p => ({ …p, type: e.target.value }))} className=“w-full rounded-2xl border border-gray-100 bg-gray-50 px-3 py-2.5 text-sm text-gray-600 outline-none”>
+<option value="simple">固定积分</option><option value="incremental">可累计</option>
+</select>
+</div>
+<div className="flex-1"><Label text="基础积分" /><Inp type=“number” value={s.basePoints} onChange={v => set(p => ({ …p, basePoints: +v }))} placeholder=“10” /></div>
+</div>
+{s.type === “incremental” && (<>
+<div className="flex gap-2">
+<div className="flex-1"><Label text="基础目标" /><Inp type=“number” value={s.baseTarget} onChange={v => set(p => ({ …p, baseTarget: +v }))} placeholder=“1” /></div>
+<div className="flex-1"><Label text="单位" /><Inp value={s.unit} onChange={v => set(p => ({ …p, unit: v }))} placeholder=“个” /></div>
+</div>
+<div className="flex gap-2">
+<div className="flex-1"><Label text="每超出几个" /><Inp type=“number” value={s.extraUnit} onChange={v => set(p => ({ …p, extraUnit: +v }))} placeholder=“1” /></div>
+<div className="flex-1"><Label text="额外积分" /><Inp type=“number” value={s.extraPoints} onChange={v => set(p => ({ …p, extraPoints: +v }))} placeholder=“3” /></div>
+</div>
+</>)}
+<Btn onClick={onSave} variant="primary" full><Check size={14} />{lbl}</Btn>
+</div>
+);
+}
+
+return (
+<div className="space-y-4">
+<div className="flex items-center justify-between">
+<div>
+<div className="text-xs text-gray-400 mb-0.5">今日已得</div>
+<div className="text-2xl font-bold text-gray-800">{todayPts} <span className="text-sm font-normal text-gray-400">pts</span></div>
+</div>
+<div className="flex gap-2">
+<button onClick={() => setRestDay(r => !r)} className={`flex items-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-medium transition-all active:scale-95 ${restDay ? "bg-blue-100 text-blue-500" : "bg-gray-100 text-gray-400 hover:bg-gray-200"}`}>
+{restDay ? <Moon size={12} /> : <Sun size={12} />} 今日休息
+</button>
+<Btn onClick={() => setShowAdd(true)} variant=“primary”><Plus size={14} />新任务</Btn>
+</div>
+</div>
+
+```
+  <div className={`space-y-2.5 transition-all duration-500 ${restDay ? "opacity-40 pointer-events-none" : ""}`}>
+    {tasks.length === 0 && <div className="text-center py-10 text-gray-300 text-sm">还没有任务，点击「新任务」开始吧 🌱</div>}
+    {tasks.map(task => {
+      const pts = calcPts(task, task.actualValue);
+      return (
+        <div key={task.id} className={`rounded-2xl border p-4 transition-all duration-300 ${task.completed ? "bg-blue-50 border-blue-100" : "bg-white border-gray-100"}`} style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
+          <div className="flex items-center gap-3">
+            <CheckRing checked={task.completed} onToggle={() => toggle(task.id)} lg />
+            <span className="text-base">{task.emoji}</span>
+            <div className="flex-1 min-w-0">
+              <div className={`text-sm font-medium transition-all ${task.completed ? "line-through text-gray-400" : "text-gray-700"}`}>{task.name}</div>
+              {task.type === "incremental" && <div className="text-xs text-gray-400 mt-0.5">基础 {task.baseTarget}{task.unit} · 每超{task.extraUnit}个 +{task.extraPoints}分</div>}
+            </div>
+            <span className={`text-xs font-semibold px-2 py-0.5 rounded-xl flex-shrink-0 ${task.completed ? "bg-blue-200 text-blue-600" : "bg-gray-100 text-gray-500"}`}>+{pts}</span>
+            <button onClick={() => setEditT({ ...task })} className="p-1.5 rounded-xl hover:bg-gray-100 transition-all active:scale-90"><Edit3 size={12} className="text-gray-300" /></button>
+            <button onClick={() => del(task.id)} className="p-1.5 rounded-xl hover:bg-red-50 transition-all active:scale-90"><Trash2 size={12} className="text-gray-300 hover:text-red-400" /></button>
+          </div>
+          {task.type === "incremental" && (
+            <div className="mt-2.5 ml-10 flex items-center gap-2">
+              <input type="number" value={task.actualValue} onChange={e => updateVal(task.id, e.target.value)} placeholder={`${task.baseTarget}`} className="w-20 rounded-xl border border-gray-100 bg-gray-50 px-3 py-1.5 text-sm text-gray-600 outline-none focus:border-blue-200 transition-all" />
+              <span className="text-xs text-gray-400">{task.unit}</span>
+              {task.completed && task.actualValue && <span className="text-xs text-blue-400 font-medium">→ 实得 {pts}分</span>}
+            </div>
+          )}
+        </div>
+      );
+    })}
+  </div>
+
+  {restDay && <div className="text-center py-6"><div className="text-4xl mb-2">🌿</div><div className="text-sm text-gray-400">好好休息，明天继续加油~</div></div>}
+
+  {showAdd && <Modal title="新增任务" onClose={() => setShowAdd(false)}><TaskForm s={draft} set={setDraft} onSave={addTask} lbl="添加任务" /></Modal>}
+  {editT   && <Modal title="编辑任务" onClose={() => setEditT(null)}>  <TaskForm s={editT} set={setEditT} onSave={saveEdit} lbl="保存更改" /></Modal>}
+</div>
+```
+
+);
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// TAB 2 · Weekly Projects
+// ══════════════════════════════════════════════════════════════════════════
+function WeeklyTab({ projects, setProjects, setTotalPoints, countdown, setCountdown }) {
+const [showAdd,   setShowAdd]   = useState(false);
+const [editCd,    setEditCd]    = useState(false);
+const [cdForm,    setCdForm]    = useState(countdown);
+const [newProj,   setNewProj]   = useState({ name: “”, emoji: “🎯”, steps: [] });
+const [stepDraft, setStepDraft] = useState({ name: “”, points: 10 });
+const daysLeft = getDaysLeft(countdown.targetDate);
+
+function toggleStep(projId, stepId) {
+setProjects(prev => prev.map(p => {
+if (p.id !== projId) return p;
+return { …p, steps: p.steps.map(s => {
+if (s.id !== stepId) return s;
+setTotalPoints(pt => Math.max(0, s.completed ? pt - s.points : pt + s.points));
+return { …s, completed: !s.completed };
+})};
+}));
+}
+
+function delProject(id) {
+const p = projects.find(x => x.id === id);
+const earned = p?.steps.filter(s => s.completed).reduce((s, x) => s + x.points, 0) || 0;
+setTotalPoints(pt => Math.max(0, pt - earned));
+setProjects(prev => prev.filter(x => x.id !== id));
+}
+
+function addStep() {
+if (!stepDraft.name.trim()) return;
+setNewProj(p => ({ …p, steps: […p.steps, { …stepDraft, id: Date.now(), completed: false }] }));
+setStepDraft({ name: “”, points: 10 });
+}
+
+function addProject() {
+if (!newProj.name.trim()) return;
+setProjects(prev => […prev, { …newProj, id: Date.now(), expanded: false }]);
+setNewProj({ name: “”, emoji: “🎯”, steps: [] }); setShowAdd(false);
+}
+
+return (
+<div className="space-y-4">
+{/* Countdown */}
+<div className=“rounded-3xl p-5 bg-gradient-to-br from-blue-50 to-white border border-blue-100” style={{ boxShadow: “0 2px 16px rgba(147,197,253,0.2)” }}>
+<div className="flex items-center justify-between">
+<div>
+<div className="text-xs text-blue-400 font-medium mb-1">{countdown.label}</div>
+<div className="text-4xl font-bold text-blue-500">{daysLeft} <span className="text-lg font-normal text-blue-300">天</span></div>
+</div>
+<div className="text-right">
+<div className="text-xs text-blue-300 mb-2">{countdown.targetDate}</div>
+<button onClick={() => { setCdForm({ …countdown }); setEditCd(true); }} className=“p-2 rounded-xl hover:bg-blue-100 transition-all active:scale-90”><Edit3 size={13} className="text-blue-300" /></button>
+</div>
+</div>
+</div>
+
+```
+  <div className="flex items-center justify-between">
+    <span className="text-sm font-semibold text-gray-600">本周项目</span>
+    <Btn onClick={() => setShowAdd(true)} variant="primary"><Plus size={14} />新项目</Btn>
+  </div>
+
+  {projects.length === 0 && <div className="text-center py-10 text-gray-300 text-sm">还没有项目，快来创建吧 🎨</div>}
+
+  <div className="space-y-3">
+    {projects.map(proj => {
+      const done   = proj.steps.filter(s => s.completed).length;
+      const earned = proj.steps.filter(s => s.completed).reduce((s, x) => s + x.points, 0);
+      const pct    = proj.steps.length > 0 ? (done / proj.steps.length) * 100 : 0;
+      return (
+        <div key={proj.id} className="rounded-2xl bg-white border border-gray-100 overflow-hidden" style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
+          <div className="p-4">
+            <div className="flex items-center gap-3">
+              <span className="text-xl">{proj.emoji}</span>
+              <div className="flex-1">
+                <div className="text-sm font-semibold text-gray-700">{proj.name}</div>
+                <div className="text-xs text-gray-400 mt-0.5">{done}/{proj.steps.length} 步骤 · 已得 {earned} pts</div>
+              </div>
+              <button onClick={() => delProject(proj.id)} className="p-1.5 rounded-xl hover:bg-red-50 active:scale-90 transition-all"><Trash2 size={12} className="text-gray-200 hover:text-red-400" /></button>
+              <button onClick={() => setProjects(prev => prev.map(p => p.id === proj.id ? { ...p, expanded: !p.expanded } : p))} className="p-1.5 rounded-xl hover:bg-gray-100 active:scale-90 transition-all">
+                {proj.expanded ? <ChevronUp size={14} className="text-gray-400" /> : <ChevronDown size={14} className="text-gray-400" />}
+              </button>
+            </div>
+            <div className="mt-3 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-full bg-blue-300 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+            </div>
+          </div>
+          {proj.expanded && (
+            <div className="border-t border-gray-50 px-4 py-3 space-y-2 bg-gray-50/50">
+              {proj.steps.length === 0 && <div className="text-center py-3 text-xs text-gray-400">暂无子步骤</div>}
+              {proj.steps.map(step => (
+                <div key={step.id} className={`flex items-center gap-3 p-3 rounded-xl transition-all duration-200 ${step.completed ? "bg-blue-50" : "bg-white"}`} style={{ boxShadow: "0 1px 6px rgba(0,0,0,0.04)" }}>
+                  <CheckRing checked={step.completed} onToggle={() => toggleStep(proj.id, step.id)} />
+                  <span className={`flex-1 text-sm ${step.completed ? "line-through text-gray-400" : "text-gray-600"}`}>{step.name}</span>
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-xl ${step.completed ? "bg-blue-200 text-blue-600" : "bg-gray-100 text-gray-500"}`}>+{step.points}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    })}
+  </div>
+
+  {showAdd && (
+    <Modal title="新增周项目" onClose={() => setShowAdd(false)}>
+      <div className="space-y-3">
+        <div className="flex gap-2">
+          <EmojiInp value={newProj.emoji} onChange={v => setNewProj(p => ({ ...p, emoji: v }))} />
+          <Inp value={newProj.name} onChange={v => setNewProj(p => ({ ...p, name: v }))} placeholder="项目名称" />
+        </div>
+        <div className="text-xs text-gray-400 font-medium">子步骤</div>
+        <div className="space-y-1.5">
+          {newProj.steps.map((s, i) => (
+            <div key={i} className="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2">
+              <span className="flex-1 text-xs text-gray-600">{s.name}</span>
+              <span className="text-xs text-gray-400">+{s.points}pts</span>
+              <button onClick={() => setNewProj(p => ({ ...p, steps: p.steps.filter((_, j) => j !== i) }))} className="text-gray-300 hover:text-red-400 active:scale-90"><X size={12} /></button>
+            </div>
+          ))}
+        </div>
+        <div className="flex gap-2">
+          <Inp value={stepDraft.name} onChange={v => setStepDraft(p => ({ ...p, name: v }))} placeholder="步骤名称" />
+          <input type="number" value={stepDraft.points} onChange={e => setStepDraft(p => ({ ...p, points: +e.target.value }))} className="w-16 rounded-2xl border border-gray-100 bg-gray-50 px-3 py-2.5 text-sm text-gray-600 outline-none text-center" />
+          <button onClick={addStep} className="px-3 py-2 rounded-2xl bg-blue-100 text-blue-500 active:scale-90 transition-all"><Plus size={14} /></button>
+        </div>
+        <Btn onClick={addProject} variant="primary" full><Check size={14} />创建项目</Btn>
+      </div>
+    </Modal>
+  )}
+
+  {editCd && (
+    <Modal title="编辑倒数日" onClose={() => setEditCd(false)}>
+      <div className="space-y-3">
+        <div><Label text="标签文字" /><Inp value={cdForm.label} onChange={v => setCdForm(p => ({ ...p, label: v }))} placeholder="距离…" /></div>
+        <div><Label text="目标日期" /><Inp type="date" value={cdForm.targetDate} onChange={v => setCdForm(p => ({ ...p, targetDate: v }))} /></div>
+        <Btn onClick={() => { setCountdown(cdForm); setEditCd(false); }} variant="primary" full><Check size={14} />保存</Btn>
+      </div>
+    </Modal>
+  )}
+</div>
+```
+
+);
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// TAB 3 · Shop
+// ══════════════════════════════════════════════════════════════════════════
+function ShopTab({ shopItems, setShopItems, totalPoints, setTotalPoints }) {
+const [showAdd,  setShowAdd]  = useState(false);
+const [editItem, setEditItem] = useState(null);
+const [flash,    setFlash]    = useState(null);
+const blank = { name: “”, price: 30, emoji: “🎁” };
+const [draft, setDraft]       = useState(blank);
+
+function buy(item) {
+if (totalPoints < item.price) return;
+setTotalPoints(p => p - item.price);
+setFlash(item.id); setTimeout(() => setFlash(null), 1200);
+}
+
+function ItemForm({ s, set, onSave, lbl }) {
+return (
+<div className="space-y-3">
+<div className="flex gap-2">
+<EmojiInp value={s.emoji} onChange={v => set(p => ({ …p, emoji: v }))} />
+<Inp value={s.name} onChange={v => set(p => ({ …p, name: v }))} placeholder=“商品名称” />
+</div>
+<div><Label text="价格 (pts)" /><Inp type=“number” value={s.price} onChange={v => set(p => ({ …p, price: +v }))} placeholder=“30” /></div>
+<Btn onClick={onSave} variant="primary" full><Check size={14} />{lbl}</Btn>
+</div>
+);
+}
+
+return (
+<div className="space-y-4">
+<div className=“rounded-3xl p-5 bg-gray-900 text-white” style={{ boxShadow: “0 4px 20px rgba(0,0,0,0.15)” }}>
+<div className="text-xs text-gray-400 mb-1">积分余额</div>
+<div className="text-4xl font-bold">{totalPoints} <span className="text-lg font-normal text-gray-500">pts</span></div>
+<div className="text-xs text-gray-500 mt-1">用积分换取你应得的奖励 ✨</div>
+</div>
+
+```
+  <div className="flex items-center justify-between">
+    <span className="text-sm font-semibold text-gray-600">奖励商店</span>
+    <Btn onClick={() => setShowAdd(true)} variant="primary"><Plus size={14} />新商品</Btn>
+  </div>
+
+  {shopItems.length === 0 && <div className="text-center py-10 text-gray-300 text-sm">还没有商品，添加奖励激励自己吧 🎁</div>}
+
+  <div className="grid grid-cols-2 gap-3">
+    {shopItems.map(item => {
+      const can = totalPoints >= item.price;
+      const bought = flash === item.id;
+      return (
+        <div key={item.id} className={`rounded-2xl p-4 border transition-all duration-300 ${bought ? "bg-blue-50 border-blue-200 scale-95" : "bg-white border-gray-100 hover:border-gray-200"}`} style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
+          <div className="flex items-start justify-between mb-3">
+            <span className="text-2xl">{item.emoji}</span>
+            <div className="flex gap-1">
+              <button onClick={() => setEditItem({ ...item })} className="p-1 rounded-lg hover:bg-gray-100 active:scale-90 transition-all"><Edit3 size={11} className="text-gray-300" /></button>
+              <button onClick={() => setShopItems(prev => prev.filter(i => i.id !== item.id))} className="p-1 rounded-lg hover:bg-red-50 active:scale-90 transition-all"><Trash2 size={11} className="text-gray-200 hover:text-red-400" /></button>
+            </div>
+          </div>
+          <div className="text-sm font-medium text-gray-700 mb-1 leading-tight">{item.name}</div>
+          <div className="text-xs text-gray-400 mb-3">{item.price} pts</div>
+          <button onClick={() => buy(item)} disabled={!can} className={`w-full py-2 rounded-xl text-xs font-semibold transition-all duration-200 active:scale-95 ${bought ? "bg-blue-400 text-white" : can ? "bg-gray-900 text-white hover:bg-gray-700" : "bg-gray-100 text-gray-300 cursor-not-allowed"}`}>
+            {bought ? "✓ 已兑换!" : can ? "兑换" : "再努力一下"}
+          </button>
+        </div>
+      );
+    })}
+  </div>
+
+  {showAdd  && <Modal title="添加商品" onClose={() => setShowAdd(false)}><ItemForm s={draft}    set={setDraft}    onSave={() => { if (!draft.name.trim()) return; setShopItems(p => [...p, { ...draft, id: Date.now() }]); setDraft(blank); setShowAdd(false); }} lbl="添加商品" /></Modal>}
+  {editItem && <Modal title="编辑商品" onClose={() => setEditItem(null)}><ItemForm s={editItem} set={setEditItem} onSave={() => { setShopItems(p => p.map(i => i.id === editItem.id ? { ...editItem } : i)); setEditItem(null); }} lbl="保存更改" /></Modal>}
+</div>
+```
+
+);
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// TAB 4 · Summary
+// ══════════════════════════════════════════════════════════════════════════
+function SummaryTab({ tasks, projects, totalPoints, weekHistory, setWeekHistory, setTasks, setProjects }) {
+const [view, setView] = useState(“week”);
+const todayPts  = tasks.reduce((s, t) => s + (t.completed ? calcPts(t, t.actualValue) : 0), 0);
+const doneTasks = tasks.filter(t => t.completed).length;
+const projPts   = projects.reduce((s, p) => s + p.steps.filter(st => st.completed).reduce((s2, st) => s2 + st.points, 0), 0);
+const maxProj   = projects.reduce((s, p) => s + p.steps.reduce((s2, st) => s2 + st.points, 0), 0);
+const maxBar    = Math.max(…weekHistory.map(w => w.points), 1);
+const noHistory = weekHistory.length === 0;
+
+function startNewWeek() {
+setWeekHistory(prev => […prev, { week: `第${prev.length + 1}周`, points: todayPts }]);
+setTasks(prev => prev.map(t => ({ …t, completed: false, actualValue: “” })));
+setProjects(prev => prev.map(p => ({ …p, steps: p.steps.map(s => ({ …s, completed: false })) })));
+}
+
+function Ring({ value, max, color, label }) {
+const r = 28, circ = 2 * Math.PI * r, pct = max > 0 ? Math.min(value / max, 1) : 0;
+return (
+<div className="flex flex-col items-center gap-2">
+<svg width={72} height={72} viewBox="0 0 64 64">
+<circle cx="32" cy="32" r={r} fill="none" stroke="#f3f4f6" strokeWidth="6" />
+<circle cx=“32” cy=“32” r={r} fill=“none” stroke={color} strokeWidth=“6”
+strokeDasharray={`${circ * pct} ${circ}`} strokeLinecap=“round” transform=“rotate(-90 32 32)”
+style={{ transition: “stroke-dasharray 0.8s cubic-bezier(.4,2,.6,1)” }} />
+<text x="32" y="36" textAnchor="middle" fontSize="11" fontWeight="700" fill="#374151">{Math.round(pct * 100)}%</text>
+</svg>
+<div className="text-xs text-gray-400 text-center leading-tight w-16">{label}</div>
+</div>
+);
+}
+
+return (
+<div className="space-y-4">
+<div className="flex gap-2 p-1 bg-gray-100 rounded-2xl">
+{[[“week”,“本周总结”],[“month”,“每月统计”]].map(([v, l]) => (
+<button key={v} onClick={() => setView(v)} className={`flex-1 py-2 rounded-xl text-sm font-medium transition-all duration-200 active:scale-95 ${view === v ? "bg-white shadow-sm text-gray-700" : "text-gray-400"}`}>{l}</button>
+))}
+</div>
+
+```
+  {view === "week" ? (<>
+    <div className="grid grid-cols-3 gap-3">
+      {[{ label: "今日积分", v: todayPts, u: "pts", e: "⚡" }, { label: "完成任务", v: doneTasks, u: `/${tasks.length}`, e: "✅" }, { label: "项目积分", v: projPts, u: "pts", e: "🎨" }].map(c => (
+        <div key={c.label} className="rounded-2xl bg-white border border-gray-100 p-3 text-center" style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
+          <div className="text-lg mb-1">{c.e}</div>
+          <div className="text-lg font-bold text-gray-800">{c.v}<span className="text-xs font-normal text-gray-400">{c.u}</span></div>
+          <div className="text-xs text-gray-400 mt-0.5">{c.label}</div>
+        </div>
+      ))}
+    </div>
+    <div className="rounded-2xl bg-white border border-gray-100 p-5" style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
+      <div className="text-xs font-semibold text-gray-500 mb-4">完成率可视化</div>
+      <div className="flex justify-around">
+        <Ring value={doneTasks} max={tasks.length}   color="#93c5fd" label="任务完成率" />
+        <Ring value={projPts}   max={maxProj}         color="#6ee7b7" label="项目完成率" />
+        <Ring value={todayPts}  max={120}             color="#fca5a5" label="今日积分率" />
+      </div>
+    </div>
+    <div className="rounded-2xl bg-gradient-to-r from-gray-50 to-blue-50 border border-blue-100 p-4 flex items-center justify-between">
+      <div>
+        <div className="text-sm font-semibold text-gray-700">准备好了吗？</div>
+        <div className="text-xs text-gray-400 mt-0.5">重置本周任务，总积分继续累积</div>
+      </div>
+      <Btn onClick={startNewWeek} variant="primary"><RefreshCw size={13} />开启新周</Btn>
+    </div>
+  </>) : (<>
+    <div className="rounded-2xl bg-white border border-gray-100 p-5" style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
+      <div className="text-xs font-semibold text-gray-500 mb-4">历史积分趋势</div>
+      {noHistory ? (
+        <div className="flex flex-col items-center justify-center py-8 gap-3">
+          <Sparkles size={28} className="text-gray-200" />
+          <div className="text-sm text-gray-300 text-center leading-relaxed">
+            暂无记录，开始你的第一周吧！<br />
+            <span className="text-xs">在「本周总结」点击「开启新周」即可生成记录</span>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-end gap-3 h-28">
+          {weekHistory.map((w, i) => (
+            <div key={i} className="flex-1 flex flex-col items-center gap-1">
+              <div className="text-xs font-semibold text-gray-500">{w.points}</div>
+              <div className="w-full rounded-t-xl bg-blue-200 transition-all duration-700" style={{ height: `${(w.points / maxBar) * 80}px`, minHeight: "4px" }} />
+              <div className="text-xs text-gray-400">{w.week}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+    {noHistory ? (
+      <div className="rounded-2xl bg-white border border-gray-100 p-6 text-center" style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
+        <div className="text-3xl mb-2">🌱</div>
+        <div className="text-sm text-gray-400">完成你的第一周后，这里将展示月度统计</div>
+      </div>
+    ) : (
+      <div className="grid grid-cols-2 gap-3">
+        {[
+          { label: "历史总积分", v: weekHistory.reduce((s, w) => s + w.points, 0) + todayPts, e: "🏆" },
+          { label: "已记录周数", v: weekHistory.length, e: "📅" },
+          { label: "最佳单周",   v: Math.max(...weekHistory.map(w => w.points)), e: "🌟" },
+          { label: "周平均积分", v: Math.round(weekHistory.reduce((s, w) => s + w.points, 0) / weekHistory.length), e: "📊" },
+        ].map(c => (
+          <div key={c.label} className="rounded-2xl bg-white border border-gray-100 p-4 flex items-center gap-3" style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
+            <span className="text-xl">{c.e}</span>
+            <div><div className="text-lg font-bold text-gray-800">{c.v}</div><div className="text-xs text-gray-400">{c.label}</div></div>
+          </div>
+        ))}
+      </div>
+    )}
+  </>)}
+</div>
+```
+
+);
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// ROOT — localStorage persistence
+// ══════════════════════════════════════════════════════════════════════════
+export default function Studio() {
+const [ready,       setReady]       = useState(false);
+const [activeTab,   setActiveTab]   = useState(0);
+const [tasks,       setTasks]       = useState(DEFAULT_TASKS);
+const [projects,    setProjects]    = useState(DEFAULT_PROJECTS);
+const [shopItems,   setShopItems]   = useState(DEFAULT_SHOP);
+const [totalPoints, setTotalPoints] = useState(0);        // ← starts at 0
+const [restDay,     setRestDay]     = useState(false);
+const [countdown,   setCountdown]   = useState(DEFAULT_COUNTDOWN);
+const [weekHistory, setWeekHistory] = useState([]);        // ← starts empty
+
+// Load once
+useEffect(() => {
+setTasks(       load(“studio_tasks”,    DEFAULT_TASKS));
+setProjects(    load(“studio_projects”, DEFAULT_PROJECTS));
+setShopItems(   load(“studio_shop”,     DEFAULT_SHOP));
+setTotalPoints( load(“studio_pts”,      0));
+setRestDay(     load(“studio_rest”,     false));
+setCountdown(   load(“studio_cd”,       DEFAULT_COUNTDOWN));
+setWeekHistory( load(“studio_history”,  []));
+setReady(true);
+}, []);
+
+// Persist on every change
+useEffect(() => { if (ready) save(“studio_tasks”,    tasks);       }, [tasks,       ready]);
+useEffect(() => { if (ready) save(“studio_projects”, projects);    }, [projects,    ready]);
+useEffect(() => { if (ready) save(“studio_shop”,     shopItems);   }, [shopItems,   ready]);
+useEffect(() => { if (ready) save(“studio_pts”,      totalPoints); }, [totalPoints, ready]);
+useEffect(() => { if (ready) save(“studio_rest”,     restDay);     }, [restDay,     ready]);
+useEffect(() => { if (ready) save(“studio_cd”,       countdown);   }, [countdown,   ready]);
+useEffect(() => { if (ready) save(“studio_history”,  weekHistory); }, [weekHistory, ready]);
+
+const tabs = [{ label: “每日任务”, icon: “🌿” }, { label: “周项目”, icon: “🎨” }, { label: “积分商店”, icon: “☁️” }, { label: “总结”, icon: “📝” }];
+
+if (!ready) return (
+<div className="min-h-screen bg-gray-50 flex items-center justify-center">
+<div className="text-gray-300 animate-pulse text-sm">studio<span className="text-blue-300">.</span></div>
+</div>
+);
+
+return (
+<div className=“min-h-screen bg-gray-50 flex items-start justify-center py-6 px-4” style={{ fontFamily: “‘Helvetica Neue’, ‘PingFang SC’, sans-serif” }}>
+<div className="w-full max-w-md">
+<div className="mb-5 px-1 flex items-center justify-between">
+<div>
+<h1 className="text-2xl font-bold text-gray-900 tracking-tight">studio<span className="text-blue-300">.</span></h1>
+<p className="text-xs text-gray-400 mt-0.5">专注 · 完成 · 成长</p>
+</div>
+<div className=“flex items-center gap-2 bg-white rounded-2xl px-3 py-2 border border-gray-100” style={{ boxShadow: “0 2px 8px rgba(0,0,0,0.05)” }}>
+<Zap size={13} className="text-yellow-400" />
+<span className="text-sm font-bold text-gray-800">{totalPoints}</span>
+<span className="text-xs text-gray-400">pts</span>
+</div>
+</div>
+
+```
+    <div className="flex gap-1.5 mb-4 p-1.5 bg-white rounded-3xl border border-gray-100" style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.05)" }}>
+      {tabs.map((tab, i) => (
+        <button key={i} onClick={() => setActiveTab(i)} className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 rounded-2xl transition-all duration-200 active:scale-95 ${activeTab === i ? "bg-gray-900 shadow-sm" : "hover:bg-gray-50"}`}>
+          <span className="text-sm">{tab.icon}</span>
+          <span className={`text-xs font-medium leading-none ${activeTab === i ? "text-white" : "text-gray-400"}`}>{tab.label}</span>
+        </button>
+      ))}
+    </div>
+
+    <div className="bg-white rounded-3xl border border-gray-100 p-5" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.06)", minHeight: "480px" }}>
+      {activeTab === 0 && <DailyTab  tasks={tasks} setTasks={setTasks} setTotalPoints={setTotalPoints} restDay={restDay} setRestDay={setRestDay} />}
+      {activeTab === 1 && <WeeklyTab projects={projects} setProjects={setProjects} setTotalPoints={setTotalPoints} countdown={countdown} setCountdown={setCountdown} />}
+      {activeTab === 2 && <ShopTab   shopItems={shopItems} setShopItems={setShopItems} totalPoints={totalPoints} setTotalPoints={setTotalPoints} />}
+      {activeTab === 3 && <SummaryTab tasks={tasks} projects={projects} totalPoints={totalPoints} weekHistory={weekHistory} setWeekHistory={setWeekHistory} setTasks={setTasks} setProjects={setProjects} />}
+    </div>
+
+    <div className="text-center mt-4 text-xs text-gray-300">每一个完成都算数 ·</div>
+  </div>
+</div>
+```
+
+);
+}
